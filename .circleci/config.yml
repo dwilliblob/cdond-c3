@@ -2,7 +2,6 @@ version: 2.1
 
 orbs:
   slack: circleci/slack@4.2.0
-  aws-cli: circleci/aws-cli@1.3.0
 
 commands:
   destroy-environment:
@@ -37,20 +36,7 @@ commands:
               exit 1
             fi
             
-jobs:
-  deploy:
-    executor:
-      name: node/default
-    steps:
-      - checkout
-      - node/install-packages
-      - run:
-          command: return 1
-      - slack/notify:
-          channel: A02843BFY3V
-          event: fail
-          template: basic_fail_1
-          
+jobs:     
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -64,9 +50,15 @@ jobs:
             cd frontend
             npm install
             npm run build
+            return 1
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - slack/notify:
+          channel: A02843BFY3V
+          when: on_fail
+          message: This is a custom failure message notification
+          webhook: webhook
 
   build-backend:
     docker:
