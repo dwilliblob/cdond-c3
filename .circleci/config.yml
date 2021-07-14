@@ -133,7 +133,7 @@ jobs:
           name: Scanning frontend
           command: |
             cd frontend
-            npm audit --audit-level=critical
+            npm audit fix --audit-level=critical --force
       - save_cache:
           paths: [frontend/scan]
           key: frontend-scan
@@ -145,11 +145,12 @@ jobs:
       - checkout # Checkout code from git
       - restore_cache:
           keys: [backend-scan] # Restore from cache
+          # Your job code here
       - run:
           name: Scanning backend
           command: |
             cd backend
-            npm audit --audit-level-critical     # Your job code here
+            npm audit fix --audit-level=critical --force
       - save_cache:
           paths: [backend/scan]
           key: backend-scan
