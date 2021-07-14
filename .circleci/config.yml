@@ -58,9 +58,26 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
+          name: Creating .env for building backend environment
+          command: |
+            {
+              echo 'ENVIRONMENT=production'
+              echo 'VERSION=1'
+              echo 'TYPEORM_CONNECTION=postgres'
+              echo 'TYPEORM_MIGRATIONS_DIR=./src/migrations'
+              echo 'TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts'
+              echo 'TYPEORM_MIGRATIONS=./src/migrations/*.ts'
+              echo 'TYPEORM_HOST=${TYPEORM_HOST}'
+              echo 'TYPEORM_PORT=${TYPEORM_PORT}'
+              echo 'TYPEORM_USERNAME=${TYPEORM_USERNAME}'
+              echo 'TYPEORM_PASSWORD=${TYPEORM_PASSWORD}'
+              echo 'TYPEORM_DATABASE=${TYPEORM_DATABASE}'
+            } >> backend/.env
+      - run:
           name: Back-end build
           command: |
             cd backend
+            cat .env
             npm install
             npm run build
       - save_cache:
@@ -72,8 +89,15 @@ jobs:
       - image: circleci/node:13.8.0 # Docker image here
     steps:
       - checkout # Checkout code from git
+      # Your job code here
       - restore_cache:
           keys [frontend-test] # Restore from cache
+      - run:
+          name: Testing frontend
+          command: |
+            cd frontend
+            npm install
+            npm run test
       - save_cache:
           paths: [frontend/test] 
           key: frontend-test
@@ -84,24 +108,35 @@ jobs:
       - image: circleci/node:13.8.0 # Docker image here
     steps:
       - checkout # Checkout code from git
+      # Your job code here
       - restore_cache:
           keys [backend-test] # Restore from cache
+      - run:
+          name: Testing backend
+          command: |
+            cd backend
+            npm install
+            npm run test
       - save_cache:
           paths: [backend/test]
           key: backend-test
-      # Your job code here
             
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0 # Docker image here
     steps:
       - checkout # Checkout code from git
+      # Your job code here
       - restore_cache:
           keys [frontend-scan] # Restore from cache
+      - run:
+          name: Scanning frontend
+          command: |
+            cd frontend
+            npm audit --audit-level=critical
       - save_cache:
           paths: [frontend/scan]
           key: frontend-scan
-      # Your job code here
 
   scan-backend:
     docker:
@@ -110,10 +145,14 @@ jobs:
       - checkout # Checkout code from git
       - restore_cache:
           keys [backend-scan] # Restore from cache
+      - run:
+          name: Scanning backend
+          command: |
+            cd backend
+            npm audit --audit-level-critical     # Your job code here
       - save_cache:
           paths: [backend/scan]
           key: backend-scan
-      # Your job code here
 
   deploy-infrastructure:
     docker:
