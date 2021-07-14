@@ -91,7 +91,7 @@ jobs:
       - checkout # Checkout code from git
       # Your job code here
       - restore_cache:
-          keys [frontend-test] # Restore from cache
+          keys: [frontend-test] # Restore from cache
       - run:
           name: Testing frontend
           command: |
@@ -110,7 +110,7 @@ jobs:
       - checkout # Checkout code from git
       # Your job code here
       - restore_cache:
-          keys [backend-test] # Restore from cache
+          keys: [backend-test] # Restore from cache
       - run:
           name: Testing backend
           command: |
@@ -128,7 +128,7 @@ jobs:
       - checkout # Checkout code from git
       # Your job code here
       - restore_cache:
-          keys [frontend-scan] # Restore from cache
+          keys: [frontend-scan] # Restore from cache
       - run:
           name: Scanning frontend
           command: |
@@ -144,7 +144,7 @@ jobs:
     steps:
       - checkout # Checkout code from git
       - restore_cache:
-          keys [backend-scan] # Restore from cache
+          keys: [backend-scan] # Restore from cache
       - run:
           name: Scanning backend
           command: |
