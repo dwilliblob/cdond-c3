@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.2.0
+  slack: circleci/slack@4.4.2
 
 commands:
   destroy-environment:
@@ -361,3 +361,7 @@ workflows:
           requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
+  send-notification:
+    jobs:
+      - notify:
+          context: slack-secrets
