@@ -55,10 +55,8 @@ jobs:
           paths: [frontend/node_modules]
           key: frontend-build
       - slack/notify:
-          channel: A02843BFY3V
-          when: on_fail
-          message: This is a custom failure message notification
-          webhook: webhook
+          event: fail
+          template: basic_fail_1
 
   build-backend:
     docker:
