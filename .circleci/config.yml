@@ -334,7 +334,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - deploy
       - build-frontend
       - build-backend
       - test-frontend:
