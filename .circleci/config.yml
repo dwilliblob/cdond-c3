@@ -101,10 +101,6 @@ jobs:
       - save_cache:
           paths: [frontend/test] 
           key: frontend-test
-      - run:
-          name: Frontend test run errors
-          command: return 1
-          when: on_fail
         # Your job code here
                 
   test-backend:
@@ -124,10 +120,6 @@ jobs:
       - save_cache:
           paths: [backend/test]
           key: backend-test
-      - run:
-          name: Backend test run errors
-          command: return 1
-          when: on_fail
 
   scan-frontend:
     docker:
