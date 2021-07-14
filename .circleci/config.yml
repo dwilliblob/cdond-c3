@@ -37,7 +37,7 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
-      - checkout
+      - checkout # Checkout code from git
       - restore_cache:
           keys: [frontend-build]
       - run:
@@ -54,7 +54,7 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
-      - checkout
+      - checkout # Checkout code from git
       - restore_cache:
           keys: [backend-build]
       - run:
@@ -69,41 +69,57 @@ jobs:
 
   test-frontend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0 # Docker image here
     steps:
-      # Checkout code from git
-      # Restore from cache
-      # Your job code here
+      - checkout # Checkout code from git
+      - restore_cache:
+          keys [frontend-test] # Restore from cache
+      - save_cache:
+          paths: [frontend/test] 
+          key: frontend-test
+        # Your job code here
                 
   test-backend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0 # Docker image here
     steps:
-      # Checkout code from git
-      # Restore from cache
+      - checkout # Checkout code from git
+      - restore_cache:
+          keys [backend-test] # Restore from cache
+      - save_cache:
+          paths: [backend/test]
+          key: backend-test
       # Your job code here
             
   scan-frontend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0 # Docker image here
     steps:
-      # Checkout code from git
-      # Restore from cache
+      - checkout # Checkout code from git
+      - restore_cache:
+          keys [frontend-scan] # Restore from cache
+      - save_cache:
+          paths: [frontend/scan]
+          key: frontend-scan
       # Your job code here
 
   scan-backend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0 # Docker image here
     steps:
-      # Checkout code from git
-      # Restore from cache
+      - checkout # Checkout code from git
+      - restore_cache:
+          keys [backend-scan] # Restore from cache
+      - save_cache:
+          paths: [backend/scan]
+          key: backend-scan
       # Your job code here
 
   deploy-infrastructure:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli # Docker image here that supports AWS CLI
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -135,9 +151,9 @@ jobs:
 
   configure-infrastructure:
     docker:
-      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.1 # Docker image here that supports Ansible
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
@@ -154,9 +170,9 @@ jobs:
 
   run-migrations:
     docker:
-      # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0 # Docker image here that supports NodeJS
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Run migrations
           command: |
@@ -171,9 +187,9 @@ jobs:
 
   deploy-frontend:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli # Docker image here that supports AWS CLI
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Install dependencies
           command: |
@@ -192,9 +208,9 @@ jobs:
                     
   deploy-backend:
     docker:
-      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.11 # Docker image here that supports Ansible
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
@@ -209,9 +225,9 @@ jobs:
 
   smoke-test:
     docker:
-      # Lightweight Docker image 
+      - image: circleci/node:13.8.0 # Lightweight Docker image 
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Install dependencies
           command: |
@@ -232,9 +248,9 @@ jobs:
 
   cloudfront-update:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli # Docker image here that supports AWS CLI
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Install dependencies
           command: |
@@ -247,9 +263,9 @@ jobs:
 
 cleanup:
     docker:
-      # Docker image here
+      - image: amazon/aws-cli # Docker image here
     steps:
-      # Checkout code from git
+      - checkout # Checkout code from git
       - run:
           name: Get old stack workflow id
           command: |
