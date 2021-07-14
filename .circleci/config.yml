@@ -101,8 +101,9 @@ jobs:
       - save_cache:
           paths: [frontend/test] 
           key: frontend-test
-      - run: return 1
-          command: echo "Errors in frontend tests"
+      - run:
+          name: Frontend test run errors
+          command: return 1
           when: on_fail
         # Your job code here
                 
@@ -123,8 +124,9 @@ jobs:
       - save_cache:
           paths: [backend/test]
           key: backend-test
-      - run: return 1
-          command: echo "Errors in backend tests"
+      - run:
+          name: Backend test run errors
+          command: return 1
           when: on_fail
 
   scan-frontend:
