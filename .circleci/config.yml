@@ -75,7 +75,8 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
-      - slack/notify:
+      - notify:
+          context: slack-secrets
           event: fail
           template: basic_fail_1
 
@@ -382,7 +383,7 @@ workflows:
           requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
-  send-notification:
-    jobs:
-      - notify:
-          context: slack-secrets
+#  send-notification:
+#    jobs:
+#      - notify:
+#          context: slack-secrets
