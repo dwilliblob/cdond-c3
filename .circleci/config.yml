@@ -77,21 +77,8 @@ jobs:
           key: frontend-build
       - slack/notify:
           event: fail
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "plain_text",
-                      "text": "Something went wrong",
-                      "emoji": true
-                    }
-                  ]
-                }
-              ]
-            }
+          template: basic_fail_1
+
 
   build-backend:
     docker:
@@ -397,7 +384,3 @@ workflows:
           requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
-#  send-notification:
-#    jobs:
-#      - notify:
-#          context: slack-secrets
