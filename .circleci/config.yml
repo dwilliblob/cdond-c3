@@ -178,8 +178,8 @@ jobs:
               --tags project=udapeople-backend \
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \ \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
-      - run: Retrieve backend url
-          name:
+      - run:
+          name: Retrieve backend url
           command: |
             export BACK_END_URL=$(aws cloudformation describe-stacks \
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
