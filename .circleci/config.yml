@@ -177,8 +177,22 @@ jobs:
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople-backend \
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \ \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}" 
-              exit 1
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
+      - run: Retrieve backend url
+          name:
+          command: |
+            export BACK_END_URL=$(aws cloudformation describe-stacks \
+              --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
+              --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" \
+              --no-paginate --output text)
+      - run: 
+          name: Persist backend url to secret store
+          command: |
+            echo $BACK_END_URL
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
+              --request PUT --data "${BACK_END_URL}" \
+              https://api.memstash.io/values/back_end_url
+
       - run:
           name: Ensure front-end infrastructure exist
           command: |
