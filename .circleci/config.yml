@@ -222,22 +222,23 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.1 # Docker image here that supports Ansible
+      - image: cimg/python:3.9.6 # Docker image here that supports Ansible
     steps:
       - checkout # Checkout code from git
-      # Add ssh keys with fingerprint
-      # attach workspace
+      - add_ssh_keys:
+          fingerprints: ["8a:cb:98:20:27:6a:6c:70:b6:99:d7:17:df:09:1a:92"]
+      - attach_workspace: # attach workspace
+          at: /tmp/.circleci/ansible     
       - run:
           name: Install dependencies
           command: |
-            # Your code here
-            exit 1
+            apk add --update ansible aws-cli
       - run:
           name: Configure server
           command: |
-            # Your code here
-            exit 1
-      # Here's where you will add some code to rollback on failure      
+            ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+      - destroy-environment: # Here's where you will add some code to rollback on failure 
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"      
 
   run-migrations:
     docker:
