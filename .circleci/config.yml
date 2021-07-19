@@ -15,7 +15,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-             if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
+            if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
               aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
             fi
             aws cloudformation delete-stack --stack-name frontend-<<parameters.workflow_id>>
