@@ -13,7 +13,8 @@ commands:
     steps:
       - run:
           name: Destroy environments
-          when: on_fail
+          when:
+            on_fail
           command: |
             if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
               aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
@@ -32,7 +33,8 @@ commands:
     steps:
       - run:
           name: Revert migrations
-          when: on_fail
+          when:
+            on_fail
           command: |
             status=$(curl -H "token: <<parameters.workflow_id>>" \
               --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
@@ -225,7 +227,7 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment: # Here's where you will add some code to rollback on failure      
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
-          when: on_fail
+
   configure-infrastructure:
     docker:
       - image: cimg/python:3.9.6 # Docker image here that supports Ansible
@@ -245,7 +247,8 @@ jobs:
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy-environment: # Here's where you will add some code to rollback on failure 
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
-          when: on_fail      
+          when:
+            on_fail      
 
   run-migrations:
     docker:
@@ -316,7 +319,8 @@ jobs:
             # your code here
       - destroy-environment: # Here's where you will add some code to rollback on failure 
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
-          when: on_fail     
+          when:
+            on_fail     
                     
   deploy-backend:
     docker:
