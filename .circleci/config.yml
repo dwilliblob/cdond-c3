@@ -6,28 +6,26 @@ orbs:
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    parameters:
-      # Add parameter here   
-      workflow_id:
+    parameters:  
+      workflow_id:  # Add parameter here 
         type: string
     steps:
       - run:
           name: Destroy environments #need to remove front-end and back-end stacks on AWS
+          when:
+            on_fail
           command: |
             if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
               aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
             fi
             aws cloudformation delete-stack --stack-name frontend-<<parameters.workflow_id>>
-            aws cloudformation delete-stack --stack-name backend-<<parameters.workflow_id>>
-      - revert-migrations:
-          workflow_id: <<parameters.workflow_id>>           
+            aws cloudformation delete-stack --stack-name backend-<<parameters.workflow_id>>         
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here
-      workflow_id:
-        type: string    
+      workflow_id: # Add parameter here
+        type: string
     steps:
       - run:
           name: Revert migrations
@@ -211,9 +209,7 @@ jobs:
           command: |
             export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
               --request GET https://api.memstash.io/values/back_end_url)
-
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
-
             cat .circleci/ansible/inventory.txt
       - run:
           name: Install tar gzip
@@ -224,8 +220,6 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment: # Here's where you will add some code to rollback on failure      
-          when:
-            on-fail
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   configure-infrastructure:
