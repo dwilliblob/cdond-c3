@@ -12,14 +12,14 @@ commands:
     steps:
       - run:
           name: Destroy environments #need to remove front-end and back-end stacks on AWS
-          when:
-            on_fail
           command: |
             if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
               aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
             fi
             aws cloudformation delete-stack --stack-name frontend-<<parameters.workflow_id>>
             aws cloudformation delete-stack --stack-name backend-<<parameters.workflow_id>>         
+          when:
+            on_fail
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -29,8 +29,6 @@ commands:
     steps:
       - run:
           name: Revert migrations
-          when:
-            on_success
           command: |
             status=$(curl -H "token: <<parameters.workflow_id>>" \
               --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
@@ -38,7 +36,9 @@ commands:
             if [[ "${status}" == 1 ]]; then
               npm run migrations:revert
             fi
-
+          when:
+            on_success
+            
 jobs:  
   build-frontend:
     docker:
