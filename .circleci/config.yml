@@ -7,7 +7,7 @@ commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:  
-      workflow_id:  # Add parameter here 
+      workflow_id:
         type: string
     steps:
       - run:
@@ -38,7 +38,7 @@ commands:
             fi
           when:
             on_success
-            
+
 jobs:  
   build-frontend:
     docker:
