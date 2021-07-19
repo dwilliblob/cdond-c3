@@ -229,9 +229,7 @@ jobs:
       - image: python:3.7-alpine3.11 # Docker image here that supports Ansible
     steps:
       - checkout # Checkout code from git
-      - add_ssh_keys:
-          fingerprints: 
-            - "6f:04:f3:02:bf:11:3f:22:22:89:c6:19:de:b1:4e:30"
+      - add_ssh_keys
       - attach_workspace: # attach workspace
           at: /tmp/.circleci/ansible     
       - run:
