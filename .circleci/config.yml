@@ -226,7 +226,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: cimg/python:3.9.6 # Docker image here that supports Ansible
+      - image: python:3.9.1-alpine3.12 # Docker image here that supports Ansible
     steps:
       - checkout # Checkout code from git
       - add_ssh_keys:
