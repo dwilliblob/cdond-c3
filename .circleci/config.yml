@@ -12,9 +12,7 @@ commands:
         type: string
     steps:
       - run:
-          name: Destroy environments
-          when:
-            on_fail
+          name: Destroy environments #need to remove front-end and back-end stacks on AWS
           command: |
             if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
               aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
@@ -34,7 +32,7 @@ commands:
       - run:
           name: Revert migrations
           when:
-            on_fail
+            on_success
           command: |
             status=$(curl -H "token: <<parameters.workflow_id>>" \
               --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
@@ -226,6 +224,8 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment: # Here's where you will add some code to rollback on failure      
+          when:
+            on-fail
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   configure-infrastructure:
