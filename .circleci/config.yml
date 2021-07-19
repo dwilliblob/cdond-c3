@@ -312,9 +312,7 @@ jobs:
           command: |
             # your code here
       - destroy-environment: # Here's where you will add some code to rollback on failure 
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
-          when:
-            on_fail     
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"    
                     
   deploy-backend:
     docker:
@@ -333,7 +331,6 @@ jobs:
             # your code here
       - destroy-environment: # Here's where you will add some code to rollback on failure 
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
-          when: on_fail 
 
   smoke-test:
     docker:
