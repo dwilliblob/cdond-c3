@@ -230,7 +230,8 @@ jobs:
     steps:
       - checkout # Checkout code from git
       - add_ssh_keys:
-          fingerprints: ["8a:cb:98:20:27:6a:6c:70:b6:99:d7:17:df:09:1a:92"]
+          fingerprints: 
+            - "6f:04:f3:02:bf:11:3f:22:22:89:c6:19:de:b1:4e:30"
       - attach_workspace: # attach workspace
           at: /tmp/.circleci/ansible     
       - run:
