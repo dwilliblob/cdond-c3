@@ -170,7 +170,7 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: - image: cimg/base:2020.04 # Docker image here that supports AWS CLI
+      - image: cimg/base:2020.04 # Docker image here that supports AWS CLI
     steps:
       - checkout # Checkout code from git
       - aws-cli/setup
