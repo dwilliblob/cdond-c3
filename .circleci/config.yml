@@ -242,7 +242,8 @@ jobs:
           command: |
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy-environment: # Here's where you will add some code to rollback on failure 
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"    
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          when: on_fail   
 
   run-migrations:
     docker:
