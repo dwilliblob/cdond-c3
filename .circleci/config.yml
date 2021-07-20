@@ -253,7 +253,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/base:2021.04 # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0 # Docker image here that supports NodeJS
     steps:
       - checkout # Checkout code from git
       - restore_cache:
