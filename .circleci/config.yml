@@ -170,9 +170,10 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli # Docker image here that supports AWS CLI
+      - image: - image: cimg/base:2020.04 # Docker image here that supports AWS CLI
     steps:
       - checkout # Checkout code from git
+      - aws-cli/setup
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -219,10 +220,8 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - run: # Here's where you will add some code to rollback on failure
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}" 
 
   configure-infrastructure:
     docker:
@@ -233,19 +232,37 @@ jobs:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
       - attach_workspace: # attach workspace
-          at: /tmp/.circleci/ansible     
+          at: ~/     
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible
+            cat .circleci/ansible/inventory.txt
       - run:
           name: Configure server
           command: |
+            {
+              echo 'ENVIRONMENT=production'
+              echo 'VERSION=1'
+              echo 'TYPEORM_CONNECTION=postgres'
+              echo 'TYPEORM_MIGRATIONS_DIR=./src/migrations'
+              echo 'TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts'
+              echo 'TYPEORM_MIGRATIONS=./src/migrations/*.ts'
+              echo 'TYPEORM_HOST=${TYPEORM_HOST}'
+              echo 'TYPEORM_PORT=${TYPEORM_PORT}'
+              echo 'TYPEORM_USERNAME=${TYPEORM_USERNAME}'
+              echo 'TYPEORM_PASSWORD=${TYPEORM_PASSWORD}'
+              echo 'TYPEORM_DATABASE=${TYPEORM_DATABASE}'
+            } >> backend/.env
+
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
-      - run: # Here's where you will add some code to rollback on failure 
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail 
+      - run:
+          name: Install AWS CLI for rolling back purposes
+          when: on_fail
+          command: |
+            apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   run-migrations:
     docker:
@@ -294,10 +311,8 @@ jobs:
                 --request PUT --data "1" \
                 https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
             fi
-      - run: # Here's where you will add some code to rollback on failure 
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail     
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"  
 
   deploy-frontend:
     docker:
