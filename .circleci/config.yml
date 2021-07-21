@@ -213,6 +213,10 @@ jobs:
               --request GET https://api.memstash.io/values/back_end_url)
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
+      - run:
+          name: Install TAR
+          command: |
+            sudo yum update tar
       - persist_to_workspace:
           root: ~/
           paths:
