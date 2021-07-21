@@ -213,10 +213,6 @@ jobs:
               --request GET https://api.memstash.io/values/back_end_url)
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
-      - run:
-          name: Install tar gzip
-          command: |
-            apt-get install tar gzip
       - persist_to_workspace:
           root: ~/
           paths:
