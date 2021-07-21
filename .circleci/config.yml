@@ -191,7 +191,7 @@ jobs:
               --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" \
               --no-paginate --output text)
 
-              echo BACK_END_URL
+              echo $BACK_END_URL
       - run: 
           name: Persist backend url to secret store
           command: |
