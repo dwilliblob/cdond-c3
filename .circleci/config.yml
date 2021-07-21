@@ -290,7 +290,7 @@ jobs:
               echo 'TYPEORM_PASSWORD=$TYPEORM_PASSWORD'
               echo 'TYPEORM_DATABASE=$TYPEORM_DATABASE'
             } >> backend/.env
-            echo backend/.env
+            cat backend/.env
       - run:
           name: Run migrations
           command: |
