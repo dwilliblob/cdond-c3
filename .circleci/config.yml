@@ -212,12 +212,12 @@ jobs:
             export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
               --request GET https://api.memstash.io/values/back_end_url)
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
+      - run: cat .circleci/ansible/inventory.txt
       - run:
           name: Install TAR
           command: |
-            yum install tar
-            yum update tar
+            apt-get update
+            apt-get install tar
       - persist_to_workspace:
           root: ~/
           paths:
