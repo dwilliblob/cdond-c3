@@ -214,9 +214,9 @@ jobs:
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
       - run: cat .circleci/ansible/inventory.txt
       - run:
-          name: Install TAR
+          name: Install Development tools including TAR
           command: |
-            sudo yum groupinstall "Development Tools"
+            yum groupinstall "Development Tools"
       - persist_to_workspace:
           root: ~/
           paths:
