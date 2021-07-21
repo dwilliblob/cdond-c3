@@ -216,7 +216,7 @@ jobs:
       - run:
           name: Install tar gzip
           command: |
-            sudo apt-get install tar gzip
+            apt-get install tar gzip
       - persist_to_workspace:
           root: ~/
           paths:
