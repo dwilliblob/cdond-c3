@@ -216,8 +216,7 @@ jobs:
       - run:
           name: Install TAR
           command: |
-            apt-get update
-            apt-get install tar
+            sudo yum groupinstall "Development Tools"
       - persist_to_workspace:
           root: ~/
           paths:
