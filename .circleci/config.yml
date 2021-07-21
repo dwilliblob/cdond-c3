@@ -190,6 +190,8 @@ jobs:
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
               --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" \
               --no-paginate --output text)
+              
+              echo BACK_END_URL
       - run: 
           name: Persist backend url to secret store
           command: |
