@@ -216,7 +216,7 @@ jobs:
       - run:
           name: Install Development tools including TAR
           command: |
-            yum groupinstall "Development Tools"
+            yum install tar
       - persist_to_workspace:
           root: ~/
           paths:
