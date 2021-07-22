@@ -141,7 +141,7 @@ jobs:
       - checkout # Checkout code from git
       # Your job code here
       - restore_cache:
-          keys: [frontend-scan] # Restore from cache
+          keys: [frontend-build] # Restore from cache
       - run:
           name: Scanning frontend
           command: |
@@ -157,13 +157,13 @@ jobs:
     steps:
       - checkout # Checkout code from git
       - restore_cache:
-          keys: [backend-scan] # Restore from cache
+          keys: [backend-build] # Restore from cache
           # Your job code here
       - run:
           name: Scanning backend
           command: |
             cd backend
-            npm audit fix --audit-level=critical --force
+            npm audit fix
       - save_cache:
           paths: [backend/scan]
           key: backend-scan
