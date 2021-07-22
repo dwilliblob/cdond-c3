@@ -35,3 +35,13 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub backend-${ID}
+
+Outputs:
+    BackendURL:
+        Description: Backend URL
+        Value: !Sub
+          - http://${Domain}
+          - { Domain: !GetAtt EC2Instance.DNSName }
+        Export:
+          Name: BackendURL
+
