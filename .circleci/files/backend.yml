@@ -35,13 +35,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub backend-${ID}
+        - Key: BackendURL
+          Value: Fn::PublicDnsName
 
 Outputs:
     BackendURL:
-        Description: Backend URL
-        Value: !Sub
-          - http://${Domain}
-          - { Domain: !GetAtt EC2Instance.DNSName }
-        Export:
-          Name: BackendURL
+        Description: EC2 Instance Backend public DNS
+        Value: !GetAtt EC2Instance.PublicDnsName
 
