@@ -42,4 +42,3 @@ Outputs:
     BackendURL:
         Description: EC2 Instance Backend public DNS
         Value: !GetAtt EC2Instance.PublicDnsName
-
