@@ -212,7 +212,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.11 # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.12 # Docker image here that supports Ansible
     steps:
       - checkout # Checkout code from git
       - add_ssh_keys:
@@ -224,24 +224,9 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
-            cat .circleci/ansible/inventory.txt
       - run:
           name: Configure server
           command: |
-            {
-              echo 'ENVIRONMENT=production'
-              echo 'VERSION=1'
-              echo 'TYPEORM_CONNECTION=postgres'
-              echo 'TYPEORM_MIGRATIONS_DIR=./src/migrations'
-              echo 'TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts'
-              echo 'TYPEORM_MIGRATIONS=./src/migrations/*.ts'
-              echo 'TYPEORM_HOST=${TYPEORM_HOST}'
-              echo 'TYPEORM_PORT=${TYPEORM_PORT}'
-              echo 'TYPEORM_USERNAME=${TYPEORM_USERNAME}'
-              echo 'TYPEORM_PASSWORD=${TYPEORM_PASSWORD}'
-              echo 'TYPEORM_DATABASE=${TYPEORM_DATABASE}'
-            } >> backend/.env
-
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - run:
           name: Install AWS CLI for rolling back purposes
