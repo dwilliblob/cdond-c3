@@ -270,10 +270,8 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-
       - restore_cache:
-          key: v1-backend-build
-
+          key: backend-build
       - run:
           name: Install dependencies
           command: |
@@ -287,6 +285,7 @@ jobs:
             npm run migrations > /tmp/migration.log
       - run:
           name: Send migration results to memstash
+          command: exit 1
             # placeholder code
      # Here's where you will add some code to rollback on failure 
   deploy-frontend:
