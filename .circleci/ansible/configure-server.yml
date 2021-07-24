@@ -30,7 +30,7 @@
       become: yes
       apt:
         name: nodejs
-        state: 13.8.0
+        state: latest
 
     - name: "Install PM2"
       become: yes
