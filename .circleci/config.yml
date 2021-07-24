@@ -261,7 +261,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            npm i node@lts
+            npm i
             npm run build
       - run:
           name: Run migrations
