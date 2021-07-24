@@ -299,6 +299,7 @@ jobs:
             npm i
             npm audit fix
             npm cache clean --force
+            npm install -g ts-node
             npm run build
             npm run migrations > migrations.log
             cat migration.log
