@@ -66,7 +66,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install prerequsites
+          name: Install jq tar gzip git and curl
           command: |
             sudo apt -y install jq tar gzip git curl
       - run:
@@ -263,6 +263,7 @@ jobs:
           command: |
             curl -sL https://rpm.nodesource.com/setup_12.x | bash -
             yum -y install nodejs npm tar gzip jq git
+            rm -rf node_modules && rm ./package-lock.json && npm install
       - run:
           name: Run migrations
           command: |
