@@ -54,8 +54,10 @@ jobs:
             npm install
             npm run build
       - save_cache:
-          paths: [project/frontend/node_modules]
           key: frontend-build
+          paths:
+            - ~/frontend/node_modules]
+          
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -75,7 +77,8 @@ jobs:
             npm run build
       - save_cache:
           key: backend-build
-          paths: [project/backend/node_modules]
+          paths:
+            - ~/backend/node_modules
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -86,7 +89,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-test]
+          keys: [frontend-build]
       - run:
           name: Testing frontend
           command: |
@@ -105,7 +108,7 @@ jobs:
       - checkout # Checkout code from git
       # Your job code here
       - restore_cache:
-          keys: [backend-test] # Restore from cache
+          keys: [backend-build] # Restore from cache
       - run:
           name: Testing backend
           command: |
@@ -113,8 +116,9 @@ jobs:
             npm install
             npm run test
       - save_cache:
-          paths: [backend/test]
           key: backend-test
+          paths:
+            - ~/backend/test
 
   scan-frontend:
     docker:
@@ -130,8 +134,9 @@ jobs:
             cd frontend
             npm audit fix --audit-level=critical --force
       - save_cache:
-          paths: [frontend/scan]
           key: frontend-scan
+          paths:
+            - ~/frontend/scan
 
   scan-backend:
     docker:
@@ -147,8 +152,9 @@ jobs:
             cd backend
             npm audit fix
       - save_cache:
-          paths: [backend/scan]
           key: backend-scan
+          paths:
+            - ~/backend/scan
 
   deploy-infrastructure:
     docker:
@@ -202,7 +208,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt
+            - ~/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}" 
 
