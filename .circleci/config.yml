@@ -24,7 +24,7 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      workflow_id: # Add parameter here
+      workflow_id:
         type: string
     steps:
       - run:
@@ -44,7 +44,7 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - restore_cache:
           keys: [frontend-build]
       - run:
@@ -54,7 +54,7 @@ jobs:
             npm install
             npm run build
       - save_cache:
-          paths: [frontend/node_modules]
+          paths: [project/frontend/node_modules]
           key: frontend-build
       - slack/notify:
           event: fail
@@ -65,32 +65,28 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      - run:
-          name: Install jq tar gzip git and curl
-          command: |
-            sudo apt -y install jq tar gzip git curl
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Backend build
           command: |
             cd backend
-            npm i
+            npm install
             npm run build
       - save_cache:
           key: backend-build
-          paths:
-            - ~/project/backend/node_modules
+          paths: [project/backend/node_modules]
       - slack/notify:
           event: fail
           template: basic_fail_1
 
   test-frontend:
     docker:
-      - image: circleci/node:13.8.0 # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      - checkout # Checkout code from git
-      # Your job code here
+      - checkout
       - restore_cache:
-          keys: [frontend-test] # Restore from cache
+          keys: [frontend-test]
       - run:
           name: Testing frontend
           command: |
@@ -258,6 +254,7 @@ jobs:
           command: exit 1
             # placeholder code
      # Here's where you will add some code to rollback on failure 
+
   deploy-frontend:
     docker:
       - image: amazon/aws-cli # Docker image here that supports AWS CLI
@@ -365,7 +362,6 @@ jobs:
               # your code here
             fi
             
-
 workflows:
   default:
     jobs:
