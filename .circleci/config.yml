@@ -242,13 +242,13 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            npm install -g npm@latest
-            npm run build
+            sudo npm install -g npm@latest
+            sudo npm run build
       - run:
           name: Run migrations
           command: |
             cd backend
-            npm run migrations > /tmp/migration.log
+            sudo npm run migrations > /tmp/migration.log
       - run:
           name: Send migration results to memstash
           command: exit 1
