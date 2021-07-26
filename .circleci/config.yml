@@ -162,29 +162,21 @@ jobs:
     steps:
       - checkout # Checkout code from git
       - run:
-          name: Checking back-end infrastructure exists
+          name: Checking backend infrastructure
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople-backend \
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
-      - run:
-          name: Getting backend url
-          command: |
-            export BACK_END_URL=$(aws cloudformation describe-stacks \
+            export BACKEND_URL=$(aws cloudformation describe-stacks \
               --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
               --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" \
               --no-paginate --output text)
-
-              echo $BACK_END_URL
-      - run: 
-          name: Sending backend url to secret store
-          command: |
-            echo $BACK_END_URL
+            echo $BACKEND_URL
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
-              --request PUT --data "${BACK_END_URL}" \
-              https://api.memstash.io/values/back_end_url
+              --request PUT --data "${BACKEND_URL}" \
+              https://api.memstash.io/values/backendurl
 
       - run:
           name: Checking front-end infrastructure exist
