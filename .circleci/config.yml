@@ -229,6 +229,7 @@ jobs:
       - run:
           name: Configure server
           command: |
+            ansible all --list-hosts
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - run:
           name: Install AWS CLI for rolling back purposes
