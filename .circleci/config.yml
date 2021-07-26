@@ -278,7 +278,7 @@ jobs:
           command: |
             status_code="${PIPESTATUS[0]}"
             if [[ ! "${status_code}" == 0 ]]; then
-              return 1
+              exit 1
             fi
             if cat migration-log.txt | grep "has been executed successfully"; then
               curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" \
@@ -289,6 +289,36 @@ jobs:
           paths:
             - backend
 
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.12
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
+      - restore_cache:
+          keys: [backend-build]
+      - attach_workspace:
+          at: ~/artifacts
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk add --update ansible aws-cli openssh-client tar
+      - run:
+          name: Compressing and saving backend
+          command: |
+            tar -C ~/artifacts/backend -czvf artifact.tar.gz .
+      - run:
+          name: Deploy backend
+          command: |
+            cd .circleci/ansible
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
@@ -323,26 +353,6 @@ jobs:
             aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID}   
-                    
-  deploy-backend:
-    docker:
-      - image: python:3.7-alpine3.11 # Docker image here that supports Ansible
-    steps:
-      - checkout # Checkout code from git
-      # Add ssh keys with fingerprint
-      # attach workspace
-      - run:
-          name: Install dependencies
-          command: |
-            # your code here
-      - run:
-          name: Deploy backend
-          command: |
-            # your code here
-      - run: # Here's where you will add some code to rollback on failure 
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail 
 
   smoke-test:
     docker:
