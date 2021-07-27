@@ -1,46 +1,35 @@
 ---
-- name: "copying backend to ec2 instance"
-  become: yes
-  copy:
-    src: ~/project/artifact.tar.gz
-    dest: /home/ubuntu/artifact.tar.gz
-
-- name: "creating binaries"
+- name: "Installing dependencies"
   become: true
-  shell: |
-    cd /home/ubuntu
-    tar xvzf artifact.tar.gz -C .
-
-- name: "launching server for backend"
-  become: true
-  shell: |
-    cd /home/ubuntu
-    pm2 start npm \
-    --name backend \
-    --start
-
-- name: "Installing npm"
-  become: yes
   apt:
-    name: npm
-    update_cache: yes
+    name: ["nodejs", "npm"]
     state: latest
-
-- name: "Installing nvm"
-  shell: >
-    curl https://raw.githubusercontent.com/creationix/nvm/v0.7.0/install.sh | sh
-    creates=/home/{{ ansible_user_id }}/.nvm/nvm.sh
-
-
-- name: "Installing node and set version"
-  shell: >
-    /bin/bash -c "source ~/.nvm/nvm.sh && nvm install 0.10 && nvm alias default 0.10"
-    creates=/home/{{ ansible_user_id }}/.nvm/alias
+    update_cache: yes
 
 - name: "Installing pm2"
-  become: yes
+  become: true
   npm:
     name: pm2
     global: yes
     production: yes
     state: present
+
+- name: "Copying backend files to web server"
+  copy:
+    src: /root/project/backend
+    dest: /home/ubuntu
+
+- name: "Installing Node"
+  shell: |
+    cd /home/ubuntu/backend
+    npm install
+
+- name: "Building Node"
+  shell: |
+    cd /home/ubuntu/backend
+    npm run build
+
+- name: "Starting PM2"
+  shell: |
+    cd /home/ubuntu/backend
+    pm2 start npm --name backend -- start
