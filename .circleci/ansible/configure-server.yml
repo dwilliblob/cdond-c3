@@ -1,5 +1,4 @@
 ---
-
 - name: "configuration play." 
   hosts: web
   user: ubuntu
@@ -15,28 +14,11 @@
         delay: 5
         timeout: 600
 
-    - name: "Install Python for Ansible enabling instance configuration"
+    - name: "Installing Python for Ansible"
       become: yes
       apt:
         name: python3
         state: latest
-
-    - name: "Upgrade packages"
-      become: yes
-      apt:
-        name: "*"
-    
-    - name: "Install Node JS"
-      become: yes
-      apt:
-        name: nodejs
-        state: latest
-
-    - name: "Install PM2"
-      become: yes
-      npm:
-        name: pm2
-        global: yes
 
   environment:
     ENVIRONMENT: production
