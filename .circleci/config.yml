@@ -236,6 +236,8 @@ jobs:
       - checkout
       - restore_cache:
           key: backend-build
+      - attach_workspace:
+          at: ~/project
       - run:
           name: Create .env for building backend
           command: |
@@ -263,17 +265,26 @@ jobs:
             cd backend
             npm i
             npm run build
-            npm run migrations 2>&1 | tee /tmp/migration_log.txt
+            npm run migrations >> ~/project/backend/migration_log.txt
+            echo 'Migration Log'
+            echo '----Start----'
+            cat migration_log.txt
+            echo '-----End-----'
       - run:
           name: Send migration results to memstash
           command: |
-            status_code="${PIPESTATUS[0]}"
-            if [[ ! "${status_code}" == 0 ]]; then
-              exit 1
-            fi
-            if cat /tmp/migration_log.txt | grep "has been executed successfully"; then
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" \
-                https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
+            cd backend
+            pwd
+            sudo cat ~/project/backend/migration_log.txt
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              curl -H "Content-Type: text/plain" -H "token: ce-${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              echo migration_log_${CIRCLE_WORKFLOW_ID}
+              echo "SUCCESS = 1"
+            else
+              echo $(curl -H "Content-Type: text/plain" -H "token: ce-${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID} | grep "No migrations")
+              echo "Migration ID" migration_log_${CIRCLE_WORKFLOW_ID}
+              echo "SUCCESS = 0"
             fi
       - persist_to_workspace:
           root: ~/project

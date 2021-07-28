@@ -16,7 +16,7 @@
 
 - name: "Copying backend files to web server"
   copy:
-    src: /root/project/backend
+    src: /home/project/backend
     dest: /home/ubuntu
 
 - name: "Installing Node"
