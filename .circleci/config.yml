@@ -383,8 +383,8 @@ jobs:
             else
               return 0
             fi
-      - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      #- destroy-environment:
+       #   workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cloudfront-update:
     docker:
