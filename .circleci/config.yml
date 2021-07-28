@@ -99,16 +99,14 @@ jobs:
       - save_cache:
           paths: [frontend/test] 
           key: frontend-test
-        # Your job code here
                 
   test-backend:
     docker:
-      - image: circleci/node:13.8.0 # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      - checkout # Checkout code from git
-      # Your job code here
+      - checkout
       - restore_cache:
-          keys: [backend-build] # Restore from cache
+          keys: [backend-build]
       - run:
           name: Testing backend
           command: |
@@ -122,12 +120,11 @@ jobs:
 
   scan-frontend:
     docker:
-      - image: circleci/node:13.8.0 # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      - checkout # Checkout code from git
-      # Your job code here
+      - checkout
       - restore_cache:
-          keys: [frontend-build] # Restore from cache
+          keys: [frontend-build]
       - run:
           name: Scanning frontend
           command: |
@@ -140,12 +137,11 @@ jobs:
 
   scan-backend:
     docker:
-      - image: circleci/node:13.8.0 # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - restore_cache:
-          keys: [backend-build] # Restore from cache
-          # Your job code here
+          keys: [backend-build]
       - run:
           name: Scanning backend
           command: |
@@ -158,9 +154,9 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - run:
           name: Checking backend infrastructure
           command: |
@@ -205,13 +201,13 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.12 # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.12
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - add_ssh_keys:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
-      - attach_workspace: # attach workspace
+      - attach_workspace:
           at: /tmp/.circleci/ansible    
       - run:
           name: Install dependencies
@@ -392,41 +388,44 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            yum install -y curl
       - run:
           name: Update cloudfront distribution
           command: |
-            # your code here
-      - run: # Here's where you will add some code to rollback on failure 
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail
+            export PreviousWorkflowID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo "Previous workflow ID :- ${PreviousWorkflowID}"
+            echo "Previous stack :- ${STACKS[@]}"
+            # Persist PreviousWorkflowID for cleanup
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "${PreviousWorkflowID}" https://api.memstash.io/values/previousworkflowid
+            
+            # deploy new
+            aws cloudformation deploy --template-file .circleci/files/cloudfront.yml --stack-name udapeople-cloudfront --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}" --tags project=udapeople
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cleanup:
     docker:
-      - image: amazon/aws-cli # Docker image here
+      - image: amazon/aws-cli
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - run:
-          name: Get old stack workflow id
+          name: Get previous stack workflow id
           command: |
-            # your code here
-            export OldWorkflowID="the id here"
-            export STACKS=[] #put the list of stacks here
-      - run:
-          name: Remove old stacks and files
-          command: |
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            export PreviousWorkflowID=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/previousworkflowid)
+            if [[ "${STACKS[@]}" =~ "${PreviousWorkflowID}" ]]
             then
-              # your code here
+              aws s3 rm s3://udapeople-"${PreviousWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name frontend-"${PreviousWorkflowID}"
+              aws cloudformation delete-stack --stack-name backend-"${PreviousWorkflowID}"
             fi
-            
+
 workflows:
   default:
     jobs:
