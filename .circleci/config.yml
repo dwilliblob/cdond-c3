@@ -282,7 +282,7 @@ jobs:
               echo migration_log_${CIRCLE_WORKFLOW_ID}
               echo "SUCCESS = 1"
             else
-              echo $(curl -H "Content-Type: text/plain" -H "token: ce-${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID} | grep "No migrations")
+              echo $(curl -H "Content-Type: text/plain" -H "token: ce-${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID} | grep "No migrations are pending")
               echo "Migration ID" migration_log_${CIRCLE_WORKFLOW_ID}
               echo "SUCCESS = 0"
             fi
@@ -358,29 +358,37 @@ jobs:
 
   smoke-test:
     docker:
-      - image: circleci/node:13.8.0 # Lightweight Docker image 
+      - image: circleci/node:13.8.0 
     steps:
-      - checkout # Checkout code from git
+      - checkout
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            sudo apt update
+            sudo apt install -y awscli
+            sudo apt install -y python3 ansible
       - run:
           name: Get backend url
           command: |
-            # your code here
+            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl >> backend-url.txt
       - run:
           name: Backend smoke test.
           command: |
-            # your code here
+            url=$(cat backend-url.txt)
+            url="http://${url}:3030/api/status"
+            curl $url
       - run:
           name: Frontend smoke test.
           command: |
-            # your code here
-      - run: # Here's where you will add some code to rollback on failure 
-          name: Destroy Infrastructure on fail
-          command: destroy-environment
-          when: on_fail 
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-1.amazonaws.com"
+            if curl -s "${URL}" | grep "Welcome"
+            then
+              return 1
+            else
+              return 0
+            fi
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cloudfront-update:
     docker:
