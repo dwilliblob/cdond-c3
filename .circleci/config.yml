@@ -29,15 +29,18 @@ commands:
     steps:
       - run:
           name: Revert migrations
+          when:
+            on_fail
           command: |
             success=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
               --request GET https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}")
             echo $success
             if [[ "${success}" == 1 ]]; then
               npm run migrations:revert
+            else
+              echo "No migrations"
+              return 0
             fi
-          when:
-            on_success
 
 jobs:  
   build-frontend:
@@ -56,7 +59,8 @@ jobs:
       - save_cache:
           key: frontend-build
           paths:
-            - ~/frontend/node_modules]
+            - frontend/node_modules
+            - frontend/dist
           
       - slack/notify:
           event: fail
@@ -78,7 +82,8 @@ jobs:
       - save_cache:
           key: backend-build
           paths:
-            - ~/backend/node_modules
+            - backend/node_modules
+            - backend/dist
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -96,9 +101,6 @@ jobs:
             cd frontend
             npm install
             npm run test
-      - save_cache:
-          paths: [frontend/test] 
-          key: frontend-test
                 
   test-backend:
     docker:
@@ -113,10 +115,6 @@ jobs:
             cd backend
             npm install
             npm run test
-      - save_cache:
-          key: backend-test
-          paths:
-            - ~/backend/test
 
   scan-frontend:
     docker:
@@ -130,10 +128,6 @@ jobs:
           command: |
             cd frontend
             npm audit fix --audit-level=critical --force
-      - save_cache:
-          key: frontend-scan
-          paths:
-            - ~/frontend/scan
 
   scan-backend:
     docker:
@@ -147,95 +141,67 @@ jobs:
           command: |
             cd backend
             npm audit fix --audit-level=critical --force
-      - save_cache:
-          key: backend-scan
-          paths:
-            - ~/backend/scan
 
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - run:
-          name: Checking backend infrastructure
+          name: Install compression utility TAR
           command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/backend.yml \
-              --tags project=udapeople-backend \
-              --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
-            export BACKEND_URL=$(aws cloudformation describe-stacks \
-              --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
-              --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" \
-              --no-paginate --output text)
-            echo "$BACKEND_URL"
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
-              --request PUT --data "${BACKEND_URL}" \
-              https://api.memstash.io/values/backendurl
+            yum -y install tar gzip
       - run:
-          name: Checking front-end infrastructure exist
+          name: Deploying backend
           command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/frontend.yml \
-              --tags project=udapeople-frontend \
-              --stack-name frontend-"${CIRCLE_WORKFLOW_ID}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}" 
+            aws cloudformation deploy --template-file .circleci/files/backend.yml --tags project="udapeople" --stack-name backend-"${CIRCLE_WORKFLOW_ID}" --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
       - run:
-          name: Adding back-end ip to ansible inventory
+          name: Storing backend url
+          when:
+            on_success
           command: |
-            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
-              --request GET https://api.memstash.io/values/backendurl)
-            echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
+            BACKEND_URL=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}") --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+            export URL=https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID}
+            echo $BACKEND_URL
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data $BACKEND_URL $URL
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET $URL
+      - restore_cache:
+          keys: [frontend-build]
       - run:
-          name: Installing Development tools
+          name: Deploying frontend
           command: |
-            yum install -y tar gzip
+            aws cloudformation deploy --template-file .circleci/files/frontend.yml --tags Name="frontend-${CIRCLE_WORKFLOW_ID}" --stack-name "frontend-${CIRCLE_WORKFLOW_ID}" --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
+      - run:
+          name: Add backend IP to inventory.txt
+          command: |
+            aws ec2 describe-instances --filters "Name=tag,Values=backend-"${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circle/ansible/inventory.txt
       - persist_to_workspace:
-          root: .circleci/ansible
+          root: ~/
           paths:
-            - inventory.txt
-      - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}" 
-
+            - project/.circleci/ansible/inventory.txt
+            - backend/
+      - destroy-environment:  
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+ 
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.12
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/ 
       - add_ssh_keys:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
-      - attach_workspace:
-          at: /tmp/.circleci/ansible    
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible
+            cat .circleci/ansible/inventory.txt
       - run:
           name: Configure server
-          command: |
-            ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
-      - run:
-          name: Install AWS CLI for rolling back purposes
-          when: on_fail
-          command: |
-            apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
-      - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
-
-  run-migrations:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          key: backend-build
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Create .env for building backend
           command: |
             cat \<< EOF > backend/.env
             ENVIRONMENT=production
@@ -250,45 +216,75 @@ jobs:
             TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
             TYPEORM_DATABASE=${TYPEORM_DATABASE}
             EOF
+            cat backend/.env
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/configure-server.yml
       - run:
-          name: Install dependencies
+          name: Install AWS CLI for rolling back purposes
+          when: on_fail
           command: |
-            sudo apt update
-            sudo apt install -y awscli
-      - run:
-          name: Run migrations
-          command: |
-            cd backend
-            npm i
-            npm run build
-            npm run migrations >> ~/project/backend/migration_log.txt
-            echo 'Migration Log'
-            echo '----Start----'
-            cat migration_log.txt
-            echo '-----End-----'
-      - run:
-          name: Sending migration result to memstash
-          command: |
-            cd backend
-            pwd
-            sudo cat ~/project/backend/migration_log.txt
-            if grep -q "has been executed successfully." ~/project/backend/migration_log.txt
-            then
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID}
-              echo migration_log_${CIRCLE_WORKFLOW_ID}
-              echo "SUCCESS = 1"
-            else
-              echo $(curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID} | grep "No migrations are pending")
-              echo "Migration ID" migration_log_${CIRCLE_WORKFLOW_ID}
-              echo "SUCCESS = 0"
-            fi
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - backend
-
+            apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
+
+  run-migrations:
+    docker:
+      - image: python:3.7-alpine3.12
+    steps:
+      - checkout
+      - run:
+          name: Install awscli, update/install ansible tar gzip nodejs npm and curl
+          command: |
+            apk add --update ansible tar gzip nodejs npm curl ansible
+            pip install awscli
+      - run:
+          name: Running migration
+          working_directory: ./backend
+          command: |
+            cat \<< EOF > backend/.env
+            ENVIRONMENT=production
+            VERSION=1
+            TYPEORM_CONNECTION=postgres
+            TYPEORM_MIGRATIONS_DIR=./src/migrations
+            TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
+            TYPEORM_MIGRATIONS=./src/migrations/*.ts
+            TYPEORM_HOST=${TYPEORM_HOST}
+            TYPEORM_PORT=${TYPEORM_PORT}
+            TYPEORM_USERNAME=${TYPEORM_USERNAME}
+            TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
+            TYPEORM_DATABASE=${TYPEORM_DATABASE}
+            EOF
+            cat .env
+            npm i
+            echo "Host     | " $TYPEORM_HOST
+            echo "PWD      | " $(pwd)
+            echo "Database | " $TYPEORM_DATABASE       
+            npm run migrations:revert
+            npm run migrations > migrations.log
+            if check_migration_status -f "$MIGRATION_LOG"; then
+              echo "$MIGRATION_LOG created"
+            fi
+            echo "Migration log items"
+            echo "-------------------"
+            cat migration.log
+      - run:
+          name: Save to memstash
+          working_directory: ./backend
+          command: |
+            # Validate presence of migration log
+            MIGRATION_LOG=/root/project/backend/migration.log
+            if test -f "$MIGRATION_LOG"; then
+                echo "$MIGRATION_LOG exists."
+            fi
+            if grep -q "has been executed successfully" $MIGRATION_LOG; then
+              echo "Database migrations successful"
+              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              else
+                echo "Database migrations failed"
+                curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+                return 1
+              fi
+      - destroy-environment
+      - revert-migration
 
   deploy-frontend:
     docker:
@@ -333,7 +329,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: ~/artifacts
+          at: ~/project
       - run:
           name: Install dependencies
           command: |
@@ -342,7 +338,7 @@ jobs:
       - run:
           name: Compressing and saving backend
           command: |
-            tar -C ~/artifacts/backend -czvf artifact.tar.gz .
+            tar -C ~/project/backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
           command: |
