@@ -307,8 +307,8 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
-            export API_URL="http://${BACKEND_IP}:3030"
+            export Backend_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
+            export API_URL="http://${Backend_URL}:3030"
             echo "${API_URL}"
       - run:
           name: Deploy frontend objects
