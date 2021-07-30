@@ -5,7 +5,7 @@ orbs:
 
 commands:
   destroy-environment:
-    description: Destroy back-end and front-end aws cloudformation stacks
+    description: Destroy backend and frontend aws cloudformation stacks
     parameters:
       workflow_id:
         type: string
@@ -51,7 +51,7 @@ jobs:
       - restore_cache:
           keys: [frontend-build]
       - run:
-          name: Build front-end
+          name: Build frontend
           command: |
             cd frontend
             npm install
@@ -74,7 +74,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Backend build
+          name: Build backend
           command: |
             cd backend
             npm install
@@ -176,11 +176,11 @@ jobs:
       - run:
           name: Add backend IP to inventory.txt
           command: |
-            aws ec2 describe-instances --filters "Name=tag,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> project/.circle/ansible/inventory.txt
+            aws ec2 describe-instances --filters "Name=tag,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt
+            - .circleci/ansible/inventory.txt
             - backend/
       - destroy-environment:  
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
