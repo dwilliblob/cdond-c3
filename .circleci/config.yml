@@ -243,7 +243,7 @@ jobs:
           name: Running migration
           working_directory: ./backend
           command: |
-            cat \<< EOF > backend/.env
+            cat \<< EOF > .env
             ENVIRONMENT=production
             VERSION=1
             TYPEORM_CONNECTION=postgres
