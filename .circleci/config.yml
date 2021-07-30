@@ -263,12 +263,12 @@ jobs:
             echo "Database | " $TYPEORM_DATABASE       
             npm run migrations:revert
             npm run migrations > migrations.log
-            if check_migration_status -f "$MIGRATION_LOG"; then
-              echo "$MIGRATION_LOG created"
+            if check_migration_status -f "$MIGRATIONS_LOG"; then
+              echo "$MIGRATIONS_LOG created"
             fi
             echo "Migration log items"
             echo "-------------------"
-            cat migration.log
+            cat migrations.log
       - run:
           name: Save to memstash
           working_directory: ./backend
