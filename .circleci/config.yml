@@ -263,21 +263,24 @@ jobs:
             echo "Database | " $TYPEORM_DATABASE       
             npm run migrations:revert
             npm run migrations > migrations.log
-            if check_migration_status -f "$MIGRATIONS_LOG"; then
+            if check_migration_status -f "$MIGRATIONS_LOG";
+            then
               echo "$MIGRATIONS_LOG created"
             fi
-            echo "Migration log items"
+            echo "Migrations log items"
             echo "-------------------"
             cat migrations.log
       - run:
           name: Save to memstash
           working_directory: ./backend
           command: |
-            MIGRATION_LOG=/root/project/backend/migration.log
-            if test -f "$MIGRATION_LOG"; then
-              echo "$MIGRATION_LOG exists."
+            MIGRATIONS_LOG=/root/project/backend/migrations.log
+            if test -f "$MIGRATIONS_LOG";
+            then
+              echo "$MIGRATIONS_LOG exists"
             fi
-            if grep -q "has been executed successfully" $MIGRATION_LOG; then
+            if grep -q "has been executed successfully" $MIGRATIONS_LOG;
+            then
               echo "Database migrations successful"
               curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
             else
