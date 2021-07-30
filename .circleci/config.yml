@@ -326,6 +326,8 @@ jobs:
       - image: python:3.7-alpine3.12
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - add_ssh_keys:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
@@ -334,11 +336,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install awscli
-          command: |
-            pip install awscli
-      - run:
-          name: Install tar gzip ansible nodejs npm curl jq
+          name: Install dependencies
           command: |
             apk add --update tar gzip ansible nodejs npm curl jq
       - run:
@@ -366,8 +364,8 @@ jobs:
             npm run build
             tar -czvf /etc/artifact.tar.gz ./
             chmod 644 /etc/artifact.tar.gz
-            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/deploy-backend.yml
-            export ANSIBLE_HOST_KEY_CHECKING=False
+            cd ..
+            cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
