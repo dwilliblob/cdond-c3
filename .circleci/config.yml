@@ -378,37 +378,43 @@ jobs:
 
   smoke-test:
     docker:
-      - image: circleci/node:13.8.0 
+      - image: python:3.7-alpine3.12
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            sudo apt update
-            sudo apt install -y awscli
-            sudo apt install -y python3 ansible
-      - run:
-          name: Persist backend url
-          command: |
-            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl > backend-url.txt
-      - run:
-          name: Smoke testing backend
-          command: |
-            url=$(cat backend-url.txt)
-            url="http://${url}:3030/api/status"
-            curl $url
+            apk add --update nodejs npm curl
+            pip install awscli
       - run:
           name: Smoke testing frontend
           command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-1.amazonaws.com"
-            if curl -s "${URL}" | grep "Welcome"
+            FRONTEND_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-1.amazonaws.com"
+            if curl -s "${FRONTEND_URL}" | grep "Welcome"
             then
-              return 1
-            else
+              echo "Smoke test PASS"
               return 0
+            else
+              return 1
             fi
-      #- destroy-environment:
-       #   workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - run:
+            name: Smoke testing backend
+            command: |
+              export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID})
+              echo "http://${BACKEND_URL}:3030/api/status"
+              if curl "http://${BACKEND_URL}:3030/api/status"
+              then
+                return 0
+                echo "Smoke Test FAIL"
+              else
+                return 1
+              fi
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cloudfront-update:
     docker:
@@ -418,20 +424,25 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            yum install -y curl
+            yum install -y tar gzip
       - run:
           name: Update cloudfront distribution
           command: |
             export PreviousWorkflowID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            echo "Previous workflow ID :- ${PreviousWorkflowID}"
-            echo "Previous stack :- ${STACKS[@]}"
-            # Persist PreviousWorkflowID for cleanup
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "${PreviousWorkflowID}" https://api.memstash.io/values/previousworkflowid
-            
-            # deploy new
-            aws cloudformation deploy --template-file .circleci/files/cloudfront.yml --stack-name udapeople-cloudfront --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}" --tags project=udapeople
+            echo $PreviousWorkflowID >> ~/previous_workflow_id.txt
+      - run:
+          name: Update cloudfront
+          no_output_timeout: 60m
+          command: |
+            aws cloudformation deploy --template-file ".circleci/files/cloudfront.yml" --stack-name udapeople-cloudfront --tags project=udapeople --parameter-overrides WorkflowID="{CIRCLE_WORKFLOW_ID}"
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - previous_workflow_id.txt
       - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cleanup:
@@ -440,15 +451,32 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Get previous stack workflow id
+          name: Install dependencies
           command: |
-            export PreviousWorkflowID=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/previousworkflowid)
-            if [[ "${STACKS[@]}" =~ "${PreviousWorkflowID}" ]]
+            yum -y install tar
+            yum -y install gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Retrieve previous workflow id and destroy old stacks and files
+          command: |
+            PreviousWorkflowID=$(cat ~/previous_workflow_id.txt)
+            
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            if "${PreviousWorkflowID}" != "${CIRCLE_WORKFLOW_ID}"
             then
-              aws s3 rm s3://udapeople-"${PreviousWorkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name frontend-"${PreviousWorkflowID}"
-              aws cloudformation delete-stack --stack-name backend-"${PreviousWorkflowID}"
+              echo PreviousWorkflowID: "${PreviousWorkflowID}"
+              echo NewWorkflowID: "${CIRCLE_WORKFLOW_ID}"
+              aws s3 rb s3://udapeople-$OldWorkflowID --force
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${PreviousWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${PreviousWorkflowID}"
+            else
+              echo "Nothing to destroy"
             fi
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
 workflows:
   default:
