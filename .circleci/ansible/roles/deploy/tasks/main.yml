@@ -1,35 +1,18 @@
 ---
-- name: "Installing dependencies"
-  become: true
-  apt:
-    name: ["nodejs", "npm"]
-    state: latest
-    update_cache: yes
-
-- name: "Installing pm2"
-  become: true
-  npm:
-    name: pm2
-    global: yes
-    production: yes
-    state: present
-
-- name: "Copying backend files to web server"
+- name: copy distribution backend to aws ec2
+  become: yes
   copy:
-    src: /home/project/backend
-    dest: /home/ubuntu
+    src: ~/project/artifact.tar.gz
+    dest: /home/ubuntu/artifact.tar.gz
 
-- name: "Installing Node"
+- name: prepare binaries
+  become: true
   shell: |
-    cd /home/ubuntu/backend
-    npm install
-
-- name: "Building Node"
+    cd /home/ubuntu
+    tar xvzf artifact.tar.gz -C .
+    
+- name: start server
+  become: true
   shell: |
-    cd /home/ubuntu/backend
-    npm run build
-
-- name: "Starting PM2"
-  shell: |
-    cd /home/ubuntu/backend
+    cd /home/ubuntu
     pm2 start npm --name backend -- start
