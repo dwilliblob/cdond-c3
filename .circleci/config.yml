@@ -310,8 +310,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
-              --request GET https://api.memstash.io/values/backendurl)
+            export API_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
             export API_URL="http://${API_URL}:3030"
             echo "${API_URL}" > .circleci/api_url.txt
       - run:
@@ -323,8 +322,8 @@ jobs:
             npm i
             npm run build
             aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
-      # - destroy-environment:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
 
   deploy-backend:
     docker:
@@ -333,7 +332,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "0c:1c:3f:7d:d4:5f:7d:cd:6a:d7:02:b8:12:72:36:ca"
+            - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
@@ -344,20 +343,15 @@ jobs:
             apk update
             apk add --update ansible aws-cli openssh-client tar
       - run:
-          name: Compress backend
-          command: |
-            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
-      - run:
           name: Deploy backend
           command: |
             cd .circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
-
-      # - destroy-environment:
-      #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
-      # - revert-migrations:
-      #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   smoke-test:
     docker:
