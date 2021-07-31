@@ -177,6 +177,7 @@ jobs:
           name: Add backend IP to inventory.txt
           command: |
             aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -336,7 +337,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: /tmp/artifacts
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -345,7 +346,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd .circleci/ansible
+            cd ~/project.circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
