@@ -311,14 +311,14 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
-            export API_URL="http://${API_URL}:3030"
-            echo "${API_URL}" > .circleci/api_url.txt
+            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
+            export BACKEND_URL="http://${BACKEND_URL}:3030"
+            echo "${BACKEND_URL}" > .circleci/backend_url.txt
       - run:
           name: Deploy frontend objects
           command: |
-            export API_URL=$(cat .circleci/api_url.txt)
-            echo "${API_URL}" > frontend/.env
+            export FRONTEND_URL=$(cat .circleci/frontend_url.txt)
+            echo "${FRONTEND_URL}" > frontend/.env
             cd frontend
             npm i
             npm run build
@@ -381,6 +381,7 @@ jobs:
             name: Smoke testing backend
             command: |
               export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl)
+              export BACKEND_URL="http://${BACKEND_URL}:3030"
               echo "http://${BACKEND_URL}:3030/api/status"
               if curl "http://${BACKEND_URL}:3030/api/status"
               then
