@@ -377,18 +377,15 @@ jobs:
               return 1
             fi
       - run:
-            name: Smoke testing backend
-            command: |
-              export BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID})
-              export BACKEND_URL="http://${BACKEND_IP}:3030"
-              if curl -s --head "${BACKEND_URL}/api/status"
-              then
-                return 0
-                echo $BACKEND_URL
-                echo "Smoke Test FAIL"
-              else
-                return 1
-              fi
+          name: Get backend url
+          command: |
+            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID} > backend_ip.txt
+      - run:
+          name: Backend smoke test.
+          command: |
+            url=$(cat backend_ip.txt)
+            url="http://${url}:3030/api/status"
+            curl $url
       # - destroy-environment:
       #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
       # - revert-migrations:
