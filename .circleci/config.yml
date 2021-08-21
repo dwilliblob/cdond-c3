@@ -288,9 +288,11 @@ jobs:
               curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
               return 1
             fi
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - backend
       - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID}
-      - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID}
 
   deploy-frontend:
@@ -348,8 +350,8 @@ jobs:
             cd .circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
-#      - destroy-environment:
-#          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   smoke-test:
     docker:
