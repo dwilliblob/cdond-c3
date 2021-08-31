@@ -324,9 +324,13 @@ jobs:
             apk update
             apk add --update ansible aws-cli openssh-client tar
       - run:
+          name: compress backend
+          command: |
+            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+      - run:
           name: Deploy backend
           command: |
-            cd /tmp/.circleci/ansible.circleci/ansible
+            cd .circleci/ansible.circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
