@@ -166,7 +166,7 @@ jobs:
             echo $EC2_IP
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data $EC2_URL https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
             curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
-            export BACKEND_URL=$(aws cloudformation describe-stacks --stack-name backend-"${CIRCLE_WORKFLOW_ID}" --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" --no-paginate --output text)
+            export BACKEND_URL=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[].Instances[].PublicDnsName" --output text)
             echo $BACKEND_URL
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "${BACKEND_URL}" https://api.memstash.io/values/backend_url_{CIRCLE_WORKFLOW_ID}
       - restore_cache:
