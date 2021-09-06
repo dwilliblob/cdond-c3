@@ -158,14 +158,17 @@ jobs:
           command: |
             aws cloudformation deploy --template-file .circleci/files/backend.yml --tags project="udapeople" --stack-name backend-"${CIRCLE_WORKFLOW_ID}" --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
       - run:
-          name: Storing backend IP
+          name: Storing backend IP and URL
           when:
             on_success
           command: |
-            export EC2_URL=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
-            echo $EC2_URL
+            export EC2_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+            echo $EC2_IP
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data $EC2_URL https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
             curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
+            export BACKEND_URL=$(aws cloudformation describe-stacks --stack-name backend-"${CIRCLE_WORKFLOW_ID}" --query "Stacks[0].Outputs[?OutputKey=='BackendURL'].OutputValue" --no-paginate --output text)
+            echo $BACKEND_URL
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "${BACKEND_URL}" https://api.memstash.io/values/backendurl-{CIRCLE_WORKFLOW_ID}
       - restore_cache:
           keys: [frontend-build]
       - run:
@@ -291,7 +294,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID})
+            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl-{CIRCLE_WORKFLOW_ID})
             export BACKEND_URL="${BACKEND_URL}:3030"
             echo "http://${BACKEND_URL}" > .circleci/backend_url.txt
       - run:
