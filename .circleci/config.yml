@@ -189,8 +189,8 @@ jobs:
           root: .circleci/ansible
           paths:
             - inventory.txt
-      # - destroy-environment:  
-      #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - destroy-environment:  
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
  
   configure-infrastructure:
     docker:
@@ -299,7 +299,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backendurl-{CIRCLE_WORKFLOW_ID})
+            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_{CIRCLE_WORKFLOW_ID})
             export BACKEND_URL="${BACKEND_URL}:3030"
             echo "http://${BACKEND_URL}" > .circleci/backend_url.txt
       - run:
@@ -370,12 +370,12 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID} > backend_ip.txt
-            cat backend_ip.txt
+            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID} > backend_ip.txt
+            cat backend_url.txt
       - run:
           name: Backend smoke test.
           command: |
-            url=$(cat backend_ip.txt)
+            url=$(cat backend_url.txt)
             url="http://${url}:3030/api/status"
             curl $url
       - destroy-environment:
