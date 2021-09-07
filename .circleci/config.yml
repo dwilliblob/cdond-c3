@@ -338,7 +338,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd ~/tmp/.circleci/ansible
+            cd /tmp/.circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy_backend.yml
       - destroy-environment:
