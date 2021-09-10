@@ -342,6 +342,8 @@ jobs:
             ls -al
             cd .circleci
             ls -al
+            cd ansible
+            ls -al
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy_backend.yml
       - destroy-environment:
