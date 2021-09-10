@@ -325,16 +325,16 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: /tmp/.circleci/ansible
+          at: /tmp/artifacts
       - run:
           name: Install dependencies
           command: |
             apk update
             apk add --update ansible aws-cli openssh-client tar
-      # - run:
-      #     name: compress backend
-      #     command: |
-      #       tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+      - run:
+          name: compress backend
+          command: |
+            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
           command: |
