@@ -186,7 +186,7 @@ jobs:
             aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: tmp/.circleci/ansible
+          root: .circleci/ansible
           paths:
             - inventory.txt
       - destroy-environment:  
@@ -325,20 +325,19 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: /tmp/artifacts
+          at: /tmp/.circleci/ansible
       - run:
           name: Install dependencies
           command: |
             apk update
             apk add --update ansible aws-cli openssh-client tar
-      - run:
-          name: compress backend
-          command: |
-            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+      # - run:
+      #     name: compress backend
+      #     command: |
+      #       tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
           command: |
-            cd /tmp/.circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy_backend.yml
       - destroy-environment:
