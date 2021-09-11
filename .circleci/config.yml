@@ -341,9 +341,12 @@ jobs:
             pwd
             ls -al
             cd .circleci
+            pwd
             ls -al
             cd ansible
+            pwd
             ls -al
+            cat inventory.txt
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
@@ -383,10 +386,10 @@ jobs:
             url=$(cat backend_url.txt)
             url="http://${url}:3030/api/status"
             curl $url
-      # - destroy-environment:
-      #    workflow_id: "${CIRCLE_WORKFLOW_ID}"
-      # - revert-migrations:
-      #    workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - destroy-environment:
+         workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
+         workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   cloudfront-update:
     docker:
