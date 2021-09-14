@@ -209,7 +209,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/.circleci/ansible
+          at: ~/
       - add_ssh_keys:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
@@ -217,10 +217,22 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible aws-cli
+            cat .circleci/ansible/inventory.txt
       - run:
           name: Configure server
           command: |
-            ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+            echo ENVIRONMENT=production > "backend/.env"
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo NODE_ENV=production >> "backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
