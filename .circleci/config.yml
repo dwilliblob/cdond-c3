@@ -330,7 +330,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: ~/project
+          at: /tmp/artifacts
       - run:
           name: Install dependencies
           command: |
