@@ -60,8 +60,6 @@ jobs:
           key: frontend-build
           paths:
             - frontend/node_modules
-            - frontend/dist
-          
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -73,17 +71,33 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - run:    
+          name: prepare environment for backend build
+          command: |
+            cat \<< EOF > backend/.env
+            ENVIRONMENT=production
+            VERSION=1
+            TYPEORM_CONNECTION=postgres
+            TYPEORM_MIGRATIONS_DIR=./src/migrations
+            TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
+            TYPEORM_MIGRATIONS=./src/migrations/*.ts
+            TYPEORM_HOST=${TYPEORM_HOST}
+            TYPEORM_PORT=${TYPEORM_PORT}
+            TYPEORM_USERNAME=${TYPEORM_USERNAME}
+            TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
+            TYPEORM_DATABASE=${TYPEORM_DATABASE}
+            EOF
       - run:
           name: Build backend
           command: |
             cd backend
+            cat .env
             npm install
             npm run build
       - save_cache:
           key: backend-build
           paths:
             - backend/node_modules
-            - backend/dist
       - slack/notify:
           event: fail
           template: basic_fail_1
