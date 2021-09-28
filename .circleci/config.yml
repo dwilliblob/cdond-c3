@@ -384,7 +384,7 @@ jobs:
 
   smoke-test-backend:
     docker:
-      - image: python:3.7-alpine3.12
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - attach_workspace:
@@ -392,8 +392,9 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm curl
-            pip install awscli
+            sudo apt update
+            sudo apt install -y awscli
+            sudo apt install -y python3 ansible
       - run:
           name: Get backend url
           command: |
