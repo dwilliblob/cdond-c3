@@ -339,7 +339,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: ~/
+          at: /tmp/artifacts
       - run:
           name: Install dependencies
           command: |
@@ -352,15 +352,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            pwd
-            ls -al
-            cd .circleci
-            pwd
-            ls -al
-            cd ansible
-            pwd
-            ls -al
-            cat inventory.txt
+            cd .circleci/ansible
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
