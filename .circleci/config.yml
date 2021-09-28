@@ -37,8 +37,6 @@ commands:
             echo $success
             if [[ "${success}" == 1 ]]; then
               npm run migrations:revert
-            else
-              return 0
             fi
 
 jobs:  
