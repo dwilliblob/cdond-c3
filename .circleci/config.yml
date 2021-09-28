@@ -252,10 +252,9 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Setting up backend environment
-          working_directory: ./backend
+          name: prepare environment for backend build
           command: |
-            cat \<< EOF > .env
+            cat \<< EOF > backend/.env
             ENVIRONMENT=production
             VERSION=1
             TYPEORM_CONNECTION=postgres
@@ -268,56 +267,34 @@ jobs:
             TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
             TYPEORM_DATABASE=${TYPEORM_DATABASE}
             EOF
-            cat .env
-            npm i
-            echo "Host     | " $TYPEORM_HOST
-            echo "PWD      | " $(pwd)
-            echo "Database | " $TYPEORM_DATABASE       
       - run:
-          name: Installing dependencies
+          name: Install dependencies
           command: |
             sudo apt update
             sudo apt install -y awscli
       - run:
-          name: Running migrations
+          name: Run migrations
           command: |
             cd backend
             cat .env
             npm i
             npm run build
-            npm run migrations:revert
-            npm run migrations > migrations.log
-            if check_migration_status -f "$MIGRATIONS_LOG";
-            then
-              echo "$MIGRATIONS_LOG created"
-            fi
-            echo "Migrations log items"
-            echo "-------------------"
-            cat migrations.log
-      - run:
-          name: Save to memstash
-          working_directory: ./backend
-          command: |
-            MIGRATIONS_LOG=/root/project/backend/migrations.log
-            if test -f "$MIGRATIONS_LOG";
-            then
-              echo "$MIGRATIONS_LOG exists"
-            fi
-            if grep -q "has been executed successfully" $MIGRATIONS_LOG;
-            then
-              echo "Database migrations successful"
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
-            else
-              echo "Database migrations failed"
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+            npm run migrations 2>&1 | tee migration-log.txt
+            status_code="${PIPESTATUS[0]}"
+            if [[ ! "${status_code}" == 0 ]]; then
               return 1
+            fi
+            if cat migration-log.txt | grep "has been executed successfully"; then
+              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
+                --request PUT --data "1" \
+                https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
             fi
       - persist_to_workspace:
           root: ~/project
           paths:
             - backend
       - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID}
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
   deploy-frontend:
     docker:
