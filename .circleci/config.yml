@@ -389,7 +389,7 @@ jobs:
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
-  smoke-test:
+  smoke-test-front-end:
     docker:
       - image: python:3.7-alpine3.12
     steps:
@@ -412,6 +412,19 @@ jobs:
             else
               return 1
             fi
+
+  smoke-test-back-end:
+    docker:
+      - image: python:3.7-alpine3.12
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update nodejs npm curl
+            pip install awscli
       - run:
           name: Get backend url
           command: |
@@ -423,11 +436,11 @@ jobs:
             url=$(cat backend_url.txt)
             url="http://${url}:3030/api/status"
             curl $url
-      # - destroy-environment:
-      #    workflow_id: "${CIRCLE_WORKFLOW_ID}"
-      # - revert-migrations:
-      #    workflow_id: "${CIRCLE_WORKFLOW_ID}"
-
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
