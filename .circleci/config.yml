@@ -203,7 +203,7 @@ jobs:
       - run:
           name: Check inventory file contents
           command: |
-            cat project/.circleci/ansible/inventory.txt
+            cat ~/project/.circleci/ansible/inventory.txt
       - run:
           name: Check ansible template file contents
           command: |
