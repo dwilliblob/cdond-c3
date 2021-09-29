@@ -203,11 +203,11 @@ jobs:
       - run:
           name: Check inventory file contents
           command: |
-            cat ~/project/.circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
       - run:
           name: Check ansible template file contents
           command: |
-            cat project/.circleci/files/frontend.yml
+            cat .circleci/files/frontend.yml
       - persist_to_workspace:
           root: ~/
           paths:
