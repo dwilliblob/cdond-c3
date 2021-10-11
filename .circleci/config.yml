@@ -57,6 +57,7 @@ jobs:
           key: frontend-build
           paths:
             - frontend/node_modules
+            - frontend/dist
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -67,7 +68,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys:
+            - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - run:    
           name: prepare environment for backend build
           command: |
@@ -92,9 +94,10 @@ jobs:
             npm install
             npm run build
       - save_cache:
-          key: backend-build
+          key: backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
           paths:
             - backend/node_modules
+            - backend/dist
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -119,7 +122,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys:
+            - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - run:
           name: Testing backend
           command: |
@@ -146,7 +150,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys:
+            - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }} 
       - run:
           name: Scanning backend
           command: |
@@ -161,7 +166,7 @@ jobs:
       - run:
           name: Install compression utility TAR
           command: |
-            yum -y install tar gzip
+            yum -y install tar gzip curl
       - run:
           name: Deploying backend
           command: |
@@ -217,7 +222,9 @@ jobs:
  
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.12
+      - image: python:3.7-alpine3.11
+    environment:
+      ANSIBLE_HOST_KEY_CHECKING: "false"
     steps:
       - checkout
       - add_ssh_keys:
@@ -228,23 +235,36 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible aws-cli
+            apk add --update tar  gzip ansible nodejs npm curl
+            pip install awscli
             cat .circleci/ansible/inventory.txt
       - run:
-          name: Configure server
+          name: collate backend  files
           command: |
-            echo ENVIRONMENT=production > "backend/.env"
-            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
-            echo NODE_ENV=production >> "backend/.env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
-            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+            ls backend       
+            tar -czvf backend.tar.gz backend
+            mkdir -p ~/project/.circleci/ansible/roles/configure-server/files/
+            mv backend.tar.gz  ~/project/.circleci/ansible/roles/configure-server/files/
+            cp -f ~/project/backend/package.json  ~/project/.circleci/ansible/roles/configure-server/files/
+      - run:
+          name: Configure server
+          no_output_timeout: 30m
+          command: |
+            echo ENVIRONMENT=production > "./backend/.env"
+            echo TYPEORM_CONNECTION=postgres >> "./backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "./backend/.env"
+            echo NODE_ENV=local >> "./backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "./backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "./backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "./backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "./backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "./backend/.env"
+            cat ./backend/.env
+            cp ./backend/.env .circleci/ansible/roles/configure-server/files
+            cd .circleci/ansible
+            ansible-playbook -vvv -i inventory.txt configure-server.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
@@ -254,30 +274,41 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys:
+            - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - attach_workspace:
+          at: ~/
       - run:
-          name: prepare environment for backend build
+          name: install npm
           command: |
-            cat \<< EOF > backend/.env
-            ENVIRONMENT=production
-            VERSION=1
-            TYPEORM_CONNECTION=postgres
-            TYPEORM_MIGRATIONS_DIR=./src/migrations
-            TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
-            TYPEORM_MIGRATIONS=./src/migrations/*.ts
-            TYPEORM_HOST=${TYPEORM_HOST}
-            TYPEORM_PORT=${TYPEORM_PORT}
-            TYPEORM_USERNAME=${TYPEORM_USERNAME}
-            TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
-            TYPEORM_DATABASE=${TYPEORM_DATABASE}
-            EOF
+            cd backend
+            npm install
       - run:
           name: Install dependencies
           command: |
             sudo apt update
             sudo apt install -y awscli
+            npm install typescript
+            npm --update install python3 npm
+      - run:
+          name: prepare environment for backend build
+          command: |
+            echo "" > "./backend/.env"
+            echo "NODE_ENV=local" >> "./backend/.env"
+            echo "VERSION=1" >> ./backend/.env
+            echo "TYPEORM_CONNECTION=$TYPEORM_CONNECTION" >> "./backend/.env"
+            echo "TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS_DIR" >> "./backend/.env"
+            echo "TYPEORM_ENTITIES=$TYPEORM_ENTITIES" >> "./backend/.env"
+            echo "TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS" >> "./backend/.env"
+            echo "TYPEORM_HOST=$TYPEORM_HOST" >> "./backend/.env"
+            echo "TYPEORM_PORT=$TYPEORM_PORT" >> "./backend/.env"
+            echo "TYPEORM_USERNAME=$TYPEORM_USERNAME" >> "./backend/.env"
+            echo "TYPEORM_PASSWORD=$TYPEORM_PASSWORD" >> "./backend/.env"
+            echo "TYPEORM_DATABASE=$TYPEORM_DATABASE" >> "./backend/.env"
+            cat ./backend/.env
       - run:
           name: Run migrations
+          no_output_timeout: 10m
           command: |
             cd backend
             cat .env
@@ -328,7 +359,7 @@ jobs:
             cd frontend
             npm i
             npm run build
-            aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
+            aws s3 sync /home/circleci/project/frontend/dist "s3://udapeople-${CIRCLE_WORKFLOW_ID}"
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID}
 
@@ -341,24 +372,38 @@ jobs:
           fingerprints:
             - "7a:6c:4e:6c:4e:86:8a:3d:c0:06:c5:96:52:d0:27:dd"
       - restore_cache:
-          keys: [backend-build]
+          keys:
+            - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - attach_workspace:
-          at: /tmp/artifacts
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            apk update
-            apk add --update ansible aws-cli openssh-client tar
+            apk add --update tar gzip openssh-client ansible nodejs npm curl zip unzip
+            pip install awscli
+            ansible-galaxy install weareinteractive.environment
+      - run: cat   .circleci/ansible/inventory.txt
       - run:
-          name: compress backend
+          name: collate backend deploy files
           command: |
-            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+            cd backend
+            cat .env
+            npm i 
+            npm run build
+            ls dist
+            tar -czvf dist.tar.gz dist
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv dist.tar.gz  ~/project/.circleci/ansible/roles/deploy/files/
+            cp -f ~/project/backend/package.json  ~/project/.circleci/ansible/roles/deploy/files/
       - run:
           name: Deploy backend
           command: |
+            cat ~/project/.circleci/ansible/inventory.txt
+            ls ~/project/.circleci/ansible/roles/deploy/files/
             cd .circleci/ansible
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            cat inventory.txt
+            ansible-playbook -vvv -i inventory.txt deploy-backend.yml
+            echo "Deploy backend finished."
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
@@ -372,8 +417,8 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm curl
-            pip install awscli
+            apk add --update npm curl
+            apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
       - run:
           name: Smoke testing frontend
           command: |
