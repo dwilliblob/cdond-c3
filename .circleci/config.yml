@@ -388,6 +388,7 @@ jobs:
           name: collate backend deploy files
           command: |
             cd backend
+            ls -al
             cat .env
             npm i 
             npm run build
