@@ -381,9 +381,10 @@ jobs:
           name: collate backend deploy files
           command: |
             cd backend
+            pwd
             ls -al
             cat .env
-            npm i 
+            npm i
             npm run build
             ls dist
             tar -czvf dist.tar.gz dist
