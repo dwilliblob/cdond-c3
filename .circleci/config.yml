@@ -383,7 +383,7 @@ jobs:
             cd backend
             pwd
             ls -al
-            cat .env
+            cat development.env
             npm i
             npm run build
             ls dist
