@@ -71,28 +71,13 @@ jobs:
           keys:
             - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - run:    
-          name: prepare environment for backend build
+          name: Prepare environment for backend
           command: |
-            cat \<< EOF > backend/.env
-            ENVIRONMENT=production
-            VERSION=1
-            TYPEORM_CONNECTION=postgres
-            TYPEORM_MIGRATIONS_DIR=./src/migrations
-            TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
-            TYPEORM_MIGRATIONS=./src/migrations/*.ts
-            TYPEORM_HOST=${TYPEORM_HOST}
-            TYPEORM_PORT=${TYPEORM_PORT}
-            TYPEORM_USERNAME=${TYPEORM_USERNAME}
-            TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
-            TYPEORM_DATABASE=${TYPEORM_DATABASE}
-            EOF
-      - run:
-          name: Build backend
-          command: |
+            ls -la
             cd backend
-            cat .env
-            npm install
+            npm i
             npm run build
+            ls -la
       - save_cache:
           key: backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
           paths:
@@ -112,8 +97,9 @@ jobs:
       - run:
           name: Testing frontend
           command: |
+            npm install oauth-sign
+            ls -al
             cd frontend
-            npm install
             npm run test
                 
   test-backend:
@@ -127,8 +113,8 @@ jobs:
       - run:
           name: Testing backend
           command: |
+            ls -al
             cd backend
-            npm install
             npm run test
 
   scan-frontend:
@@ -167,6 +153,10 @@ jobs:
           name: Install compression utility TAR
           command: |
             yum -y install tar gzip curl
+      - run: 
+          name: install python3-pip
+          command: |
+            yum -y install python3-pip 
       - run:
           name: Deploying backend
           command: |
