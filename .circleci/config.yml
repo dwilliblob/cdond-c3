@@ -357,7 +357,7 @@ jobs:
 
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.12
+      - image: python:3.9.0-alpine
     environment:
         ANSIBLE_HOST_KEY_CHECKING: "false"
     steps:
@@ -369,37 +369,51 @@ jobs:
           keys:
             - backend-build-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Install dependencies
           command: |
-            apk add --update tar gzip openssh-client ansible nodejs npm curl zip unzip
+            apk add --update ansible
+            apk add --update curl
+            apk add --update nodejs npm rsync openssh
+            apk add --update tar gzip zip unzip
             pip install awscli
-            ansible-galaxy install weareinteractive.environment
+            ansible --version
+            awscli --version
+            curl --version
+            tar --version
+            gzip --version
+            zip --version
+            unzip --version
       - run: cat   .circleci/ansible/inventory.txt
       - run:
-          name: collate backend deploy files
+          name: Adding environment variables to .env file
+          working_directory: ./backend
           command: |
-            cd backend
-            pwd
+            echo TYPEORM_CONNECTION=postgres >> ".env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
+            echo TYPEORM_HOST=${TYPEORM_HOST} >> ".env"
+            echo TYPEORM_PORT=${TYPEORM_PORT} >> ".env"
+            echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> ".env"
+            echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> ".env"
+            echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> ".env"  
+      - run:
+          name: listing backend files
+          working_directory: ./backend          
+          command: |
+            cat .env
+            npm install
+            npm run build            
             ls -al
-            cat development.env
-            npm i
-            npm run build
-            ls dist -al
-            tar -czvf dist.tar.gz dist
-            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            mv dist.tar.gz  ~/project/.circleci/ansible/roles/deploy/files/
-            cp -f ~/project/backend/package.json  ~/project/.circleci/ansible/roles/deploy/files/
       - run:
           name: Deploy backend
+          working_directory: ./.circleci/ansible          
           command: |
-            cat ~/project/.circleci/ansible/inventory.txt
-            ls ~/project/.circleci/ansible/roles/deploy/files/
-            cd .circleci/ansible
             cat inventory.txt
-            ansible-playbook -vvv -i inventory.txt deploy-backend.yml
-            echo "Deploy backend finished."
+            ansible-playbook -i inventory.txt deploy-backend.yml
+            echo "Backend deployment complete"
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
