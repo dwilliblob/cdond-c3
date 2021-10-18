@@ -393,20 +393,28 @@ jobs:
             echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> ".env"
             echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> ".env"  
       - run:
-          name: listing backend files
-          working_directory: ./backend          
+          name: collate backend deploy files
           command: |
-            cat .env
-            npm install
-            npm run build            
+            cd backend
+            pwd
             ls -al
+            cat development.env
+            npm i
+            npm run build
+            ls dist -al
+            tar -czvf dist.tar.gz dist
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv dist.tar.gz  ~/project/.circleci/ansible/roles/deploy/files/
+            cp -f ~/project/backend/package.json  ~/project/.circleci/ansible/roles/deploy/files/
       - run:
           name: Deploy backend
-          working_directory: ./.circleci/ansible          
           command: |
+            cat ~/project/.circleci/ansible/inventory.txt
+            ls ~/project/.circleci/ansible/roles/deploy/files/
+            cd .circleci/ansible
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-            echo "Backend deployment complete"
+            ansible-playbook -vvv -i inventory.txt deploy-backend.yml
+            echo "Deploy backend finished."
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
