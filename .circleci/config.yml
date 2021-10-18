@@ -378,13 +378,6 @@ jobs:
             apk add --update nodejs npm rsync openssh
             apk add --update tar gzip zip unzip
             pip install awscli
-            ansible --version
-            awscli --version
-            curl --version
-            tar --version
-            gzip --version
-            zip --version
-            unzip --version
       - run: cat   .circleci/ansible/inventory.txt
       - run:
           name: Adding environment variables to .env file
