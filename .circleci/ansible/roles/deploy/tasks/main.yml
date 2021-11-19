@@ -1,18 +1,29 @@
 ---
-- name: copy distribution backend to aws ec2
-  become: yes
+
+- name: Copy backend dist files to remote server
   copy:
-    src: ~/project/artifact.tar.gz
-    dest: /home/ubuntu/artifact.tar.gz
+    src: /root/project/backend
+    dest: /home/ubuntu
 
-- name: prepare binaries
+- name: Install Node modules
+  shell: |
+    cd /home/ubuntu/backend
+    ls -la
+    printenv
+    npm install
+- name: building node services
+  shell: |
+    cd /home/ubuntu/backend
+    npm run build
+    npm run prestart:prod
+- name: "run migrations again"
+  shell: |
+    cd /home/ubuntu/backend
+    npm run migrations
+    
+- name: Executing node
   become: true
   shell: |
-    cd /home/ubuntu
-    tar xvzf artifact.tar.gz -C .
-
-- name: launch server
-  become: true
-  shell: |
-    cd /home/ubuntu
+    cd /home/ubuntu/backend 
     pm2 start npm --name backend -- start
+    pm2 ls
