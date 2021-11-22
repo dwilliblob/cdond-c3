@@ -358,7 +358,7 @@ jobs:
 
   deploy-backend:
     docker:
-      - image: python:3.9.1-alpine3.12
+      - image: python:3.9.0-alpine
     environment:
         ANSIBLE_HOST_KEY_CHECKING: "false"
     steps:
