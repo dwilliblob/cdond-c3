@@ -377,6 +377,7 @@ jobs:
             apk add --update tar gzip zip unzip
             pip install awscli
       - run: cat   .circleci/ansible/inventory.txt
+      - run: node -v
       # - run:
       #     name: Adding environment variables to .env file
       #     working_directory: ./backend
