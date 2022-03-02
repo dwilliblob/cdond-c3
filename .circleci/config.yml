@@ -456,11 +456,11 @@ jobs:
             sudo apt update
             sudo apt install -y awscli
             sudo apt install -y python3 ansible
-#      - run:
-      #     name: Get backend url
-      #     command: |
-      #       curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID} > backend_url.txt
-      #       cat backend_url.txt
+     - run:
+          name: Get backend url
+          command: |
+            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID} > backend_url.txt
+            cat backend_url.txt
       - run:
           name: Backend smoke test.
           command: |
