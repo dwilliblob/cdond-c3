@@ -15,11 +15,11 @@ commands:
           when: 
             on_fail
           command: |
-            if aws s3 ls | grep udapeople-"${CIRCLE_WORKFLOW_ID}"; then
-              aws s3 rm s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
+            if aws s3 ls | grep udapeople-"${CIRCLE_WORKFLOW_ID:0:7}"; then
+              aws s3 rm s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
             fi
-            aws cloudformation delete-stack --stack-name frontend-"${CIRCLE_WORKFLOW_ID}"
-            aws cloudformation delete-stack --stack-name backend-"${CIRCLE_WORKFLOW_ID}"
+            aws cloudformation delete-stack --stack-name frontend-"${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name backend-"${CIRCLE_WORKFLOW_ID:0:7}"
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -32,8 +32,8 @@ commands:
           when:
             on_fail
           command: |
-            success=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
-              --request GET https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}")
+            success=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request GET https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID:0:7}")
             echo $success
             if [[ "${success}" == 1 ]]; then
               npm run migrations:revert
@@ -163,37 +163,37 @@ jobs:
             aws cloudformation deploy \
             --template-file .circleci/files/backend.yml \
             --tags project="udapeople" \
-            --stack-name backend-"${CIRCLE_WORKFLOW_ID}" \
-            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
+            --stack-name udapeople-backend-"${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Storing backend IP
           when:
             on_success
           command: |
-            export EC2_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+            export EC2_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
             echo $EC2_IP
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data $EC2_IP https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
-            
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data $EC2_IP https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID:0:7}
+            curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/backend_ip_${CIRCLE_WORKFLOW_ID}
       - run:
           name: Storing backend URL
           when:
             on_success
           command: |
-            export BACKEND_URL=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicDnsName" --output text)
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" --request PUT --data $BACKEND_URL https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID}
-            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID}
+            export BACKEND_URL=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" --query "Reservations[*].Instances[*].PublicDnsName" --output text)
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data $BACKEND_URL https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID:0:7}
+            curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Deploying frontend
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/frontend.yml \
-            --tags Name="frontend-${CIRCLE_WORKFLOW_ID}" \
-            --stack-name "frontend-${CIRCLE_WORKFLOW_ID}" \
-            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
+            --tags Name="udapeople" \
+            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add backend IP to inventory.txt
           command: |
-            aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circleci/ansible/inventory.txt
+            aws ec2 describe-instances --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" --query "Reservations[*].Instances[*].PublicIpAddress" --output text >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
       - run:
           name: Check inventory file contents
@@ -208,7 +208,7 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment:  
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
  
   configure-infrastructure:
     docker:
@@ -257,7 +257,7 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -vvv -i inventory.txt configure-server.yml
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   run-migrations:
     docker:
@@ -311,16 +311,16 @@ jobs:
               return 1
             fi
             if cat migration-log.txt | grep "has been executed successfully"; then
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
+              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
                 --request PUT --data "1" \
-                https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
+                https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID:0:7}"
             fi
       - persist_to_workspace:
           root: ~/project
           paths:
             - backend
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   deploy-frontend:
     docker:
@@ -340,7 +340,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_{CIRCLE_WORKFLOW_ID})
+            export BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/backend_url_{CIRCLE_WORKFLOW_ID:0:7})
             export BACKEND_URL="${BACKEND_URL}:3030"
             echo "http://${BACKEND_URL}" > .circleci/backend_url.txt
       - run:
@@ -352,9 +352,9 @@ jobs:
             npm i
             npm run build
             ls -al
-            aws s3 cp dist/ s3://udapeople-${CIRCLE_WORKFLOW_ID} --recursive
+            aws s3 cp dist/ s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID}
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-backend:
     docker:
@@ -417,7 +417,7 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
-         workflow_id: "${CIRCLE_WORKFLOW_ID}"
+         workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   smoke-test-frontend:
     docker:
@@ -434,7 +434,7 @@ jobs:
       - run:
           name: Smoke testing frontend
           command: |
-            FRONTEND_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-1.amazonaws.com"
+            FRONTEND_URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"
             if curl -s "${FRONTEND_URL}" | grep "Welcome"
             then
               echo "Smoke test PASS"
@@ -459,13 +459,13 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            curl -H "token: ${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID} > backend_url.txt
+            curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/backend_url_${CIRCLE_WORKFLOW_ID:0:7} > backend_url.txt
             cat backend_url.txt
       - run:
           name: Backend smoke test.
           command: |
             BACKEND_IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name, Values=backend-${CIRCLE_WORKFLOW_ID}" \
+            --filters "Name=tag:Name, Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text)
             echo ${BACKEND_IP}          
@@ -476,9 +476,9 @@ jobs:
               return 1
             fi
       # - destroy-environment:
-      #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      #     workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       # - revert-migrations:
-      #     workflow_id: "${CIRCLE_WORKFLOW_ID}"
+      #     workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   cloudfront-update:
     docker:
@@ -499,15 +499,15 @@ jobs:
           name: Update cloudfront
           no_output_timeout: 60m
           command: |
-            aws cloudformation deploy --template-file ".circleci/files/cloudfront.yml" --stack-name udapeople-cloudfront --tags project=udapeople --parameter-overrides WorkflowID="{CIRCLE_WORKFLOW_ID}"
+            aws cloudformation deploy --template-file ".circleci/files/cloudfront.yml" --stack-name udapeople-cloudfront --tags project=udapeople --parameter-overrides WorkflowID="{CIRCLE_WORKFLOW_ID:0:7}"
       - persist_to_workspace:
           root: ~/
           paths:
             - previous_workflow_id.txt
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   cleanup:
     docker:
@@ -527,10 +527,10 @@ jobs:
             PreviousWorkflowID=$(cat ~/previous_workflow_id.txt)
             
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            if "${PreviousWorkflowID}" != "${CIRCLE_WORKFLOW_ID}"
+            if "${PreviousWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}"
             then
-              echo PreviousWorkflowID: "${PreviousWorkflowID}"
-              echo NewWorkflowID: "${CIRCLE_WORKFLOW_ID}"
+              echo PreviousWorkflowID: "${PreviousWorkflowID:0:7}"
+              echo NewWorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
               aws s3 rb s3://udapeople-$OldWorkflowID --force
               aws cloudformation delete-stack --stack-name "udapeople-backend-${PreviousWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${PreviousWorkflowID}"
@@ -538,9 +538,9 @@ jobs:
               echo "Nothing to destroy"
             fi
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
-          workflow_id: "${CIRCLE_WORKFLOW_ID}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
 workflows:
   default:
