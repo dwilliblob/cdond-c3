@@ -176,7 +176,7 @@ jobs:
       - run:
           name: Add backend IP to inventory.txt
           command: |
-            aws ec2 describe-instances --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            aws ec2 describe-instances --filters "Name=tag:project,Values=udapeople" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text >> .circleci/ansible/inventory.txt
       - run:
@@ -362,37 +362,6 @@ jobs:
             pip install awscli
       - run: cat   .circleci/ansible/inventory.txt
       - run: node -v
-      # - run:
-      #     name: Adding environment variables to .env file
-      #     working_directory: ./backend
-      #     command: |
-      #       echo TYPEORM_CONNECTION=postgres >> ".env"
-      #       echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
-      #       echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
-      #       echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
-      #       echo TYPEORM_HOST=${TYPEORM_HOST} >> ".env"
-      #       echo TYPEORM_PORT=${TYPEORM_PORT} >> ".env"
-      #       echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> ".env"
-      #       echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> ".env"
-      #       echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> ".env"  
-      # - run:
-      #     name: collate backend deploy files
-      #     command: |
-      #       cd backend
-      #       pwd
-      #       ls -al
-      #       cat development.env
-      #       npm i
-      #       npm run build
-      #       ls dist -al
-      #       tar -czvf dist.tar.gz dist
-      #       mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-      #       mv dist.tar.gz  ~/project/.circleci/ansible/roles/deploy/files/
-      #       cp -f ~/project/backend/package.json  ~/project/.circleci/ansible/roles/deploy/files/
-      # - run:
-      #     name: Compress tar
-      #     command: |
-      #       tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
           no_output_timeout: 30m
