@@ -450,7 +450,7 @@ jobs:
             yum install -y tar gzip
       - run:
           name: Update cloudfront distribution
-          command: 
+          command: |
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
