@@ -178,16 +178,18 @@ jobs:
             aws ec2 describe-instances --filters "Name=tag:project,Values=udapeople" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text >> backendip.txt
+            cat backendip.txt
       - run:
           name: Add backend IP to inventory.txt
           command: |
             aws ec2 describe-instances --filters "Name=tag:project,Values=udapeople" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
-            --output text >> .circleci/ansible/inventory.txt
+            --output text >> project/.circleci/ansible/inventory.txt
+            cat project/.circleci/ansible/inventory.txt
       - run:
           name: Check inventory file contents
           command: |
-            cat .circleci/ansible/inventory.txt
+            cat project/.circleci/ansible/inventory.txt
       - run:
           name: Check ansible template file contents
           command: |
@@ -455,8 +457,10 @@ jobs:
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName"\
-             --stack-status-filter CREATE_COMPLETE --no-paginate --output text >> oldworkflowid.txt))
-             cat oldworkflowid.txt
+             --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            # cat oldworkflowid.txt
+             curl https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"  -d '"${OldworkflowID}"'
+             curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"
             # echo Old Workflow ID: "${OldworkflowID}"
       - persist_to_workspace:
           root: ~/
