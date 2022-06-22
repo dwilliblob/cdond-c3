@@ -455,7 +455,8 @@ jobs:
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName"\
-             --stack-status-filter CREATE_COMPLETE --no-paginate --output --output text >> oldworkflowid.txt))
+             --stack-status-filter CREATE_COMPLETE --no-paginate --output --output file >> oldworkflowid.txt))
+             cat oldworkflowid.txt
             # echo Old Workflow ID: "${OldworkflowID}"
       - persist_to_workspace:
           root: ~/
