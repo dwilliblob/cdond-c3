@@ -461,7 +461,6 @@ jobs:
             echo Old Workflow ID: "${OldworkflowID}"
             curl https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"  -d "${OldworkflowID}"
             curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"
-            echo Old Workflow ID: "${OldworkflowID}"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -482,6 +481,7 @@ jobs:
       - run:
           name: Check stacks
           command: |
+            export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
             if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
