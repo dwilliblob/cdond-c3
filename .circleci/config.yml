@@ -479,15 +479,9 @@ jobs:
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project="udapeople"
       - run:
-          name: Check stacks
+          name: Persist Old Workflow ID to Cloud Keystore
           command: |
             export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
-            if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
-            then
-              aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldworkflowID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldworkflowID}"
-            fi
             echo Old Workflow ID: "${OldworkflowID}" 
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
@@ -509,19 +503,16 @@ jobs:
       - run:
           name: Retrieve previous workflow id and destroy old stacks and files
           command: |
-            PreviousWorkflowID=$(cat ~/oldworkflowid.txt)
-            
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            if "${PreviousWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}"
+            export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
+            if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
             then
-              echo PreviousWorkflowID: "${PreviousWorkflowID:0:7}"
-              echo NewWorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
-              aws s3 rb s3://udapeople-$OldWorkflowID --force
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${PreviousWorkflowID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${PreviousWorkflowID}"
+              aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldworkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldworkflowID}"
             else
-              echo "Nothing to destroy"
+              echo "No files or components to delete"
             fi
+            echo Old Workflow ID: "${OldworkflowID}" 
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
