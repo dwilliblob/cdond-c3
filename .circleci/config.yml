@@ -18,8 +18,8 @@ commands:
             if aws s3 ls | grep udapeople-"${CIRCLE_WORKFLOW_ID:0:7}"; then
               aws s3 rm s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
             fi
-            aws cloudformation delete-stack --stack-name frontend-"${CIRCLE_WORKFLOW_ID:0:7}"
-            aws cloudformation delete-stack --stack-name backend-"${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name udapeople-frontend-"${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name udapeople-backend-"${CIRCLE_WORKFLOW_ID:0:7}"
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -504,11 +504,12 @@ jobs:
           name: Retrieve previous workflow id and destroy old stacks and files
           command: |
             export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
+            echo Old workflow ID: "${OldworkflowID"
             if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldworkflowID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldworkflowID}"
+              aws cloudformation delete-stack --stack-name udapeople-frontend-"${OldworkflowID}"
+              aws cloudformation delete-stack --stack-name udapeople-backend-"${OldworkflowID}"
             else
               echo "No files or components to delete"
             fi
