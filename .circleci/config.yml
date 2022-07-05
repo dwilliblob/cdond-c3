@@ -459,8 +459,8 @@ jobs:
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
             --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Old Workflow ID: "${OldworkflowID}"
-            curl https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"  -d "${OldworkflowID}"
-            curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-"${CIRCLE_WORKFLOW_ID:0:7}"
+            curl https://kvdb.io/LRztveR4fsKSiMYHL87ef9/oldworkflowid-"${CIRCLE_WORKFLOW_ID:0:7}"  -d "${OldworkflowID}"
+            curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/oldworkflowid-"${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -478,11 +478,6 @@ jobs:
             --stack-name production-distro \
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project="udapeople"
-      - run:
-          name: Persist Old Workflow ID to Cloud Keystore
-          command: |
-            export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
-            echo Old Workflow ID: "${OldworkflowID}" 
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
@@ -503,8 +498,8 @@ jobs:
       - run:
           name: Retrieve previous workflow id and destroy old stacks and files
           command: |
-            export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/migration-${CIRCLE_WORKFLOW_ID:0:7})
-            echo Old workflow ID: "${OldworkflowID"
+            export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/oldworkflowid-"${CIRCLE_WORKFLOW_ID:0:7}")
+            echo Old workflow ID: "${OldworkflowID}"
             if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
