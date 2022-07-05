@@ -500,9 +500,9 @@ jobs:
           command: |
             export OldworkflowID=$(curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/oldworkflowid-"${CIRCLE_WORKFLOW_ID:0:7}")
             echo Old workflow ID: "${OldworkflowID}"
-            if [[ "${STACKS[@]}" =~ "${OldworkflowID}" ]]
+            if aws s3 ls | grep udapeople-"${OldworkflowID}"
             then
-              aws s3 rm "s3://udapeople-${OldworkflowID}" --recursive
+              aws s3 rm s3://udapeople-"${OldworkflowID}" --recursive
               aws cloudformation delete-stack --stack-name udapeople-frontend-"${OldworkflowID}"
               aws cloudformation delete-stack --stack-name udapeople-backend-"${OldworkflowID}"
             else
