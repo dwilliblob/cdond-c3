@@ -418,11 +418,6 @@ jobs:
             sudo apt install -y awscli
             sudo apt install -y python3 ansible
       - run:
-          name: Smoke testing frontend
-          command: |
-            curl --insecure https://kvdb.io/LRztveR4fsKSiMYHL87ef9/backend_url_{CIRCLE_WORKFLOW_ID:0:7} > backend_url.txt
-            cat backend_url.txt
-      - run:
           name: Backend smoke test.
           command: |
             BACKEND_IP=$(aws ec2 describe-instances \
